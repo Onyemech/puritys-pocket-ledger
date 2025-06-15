@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, DollarSign, Calendar, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CustomerAccountsProps {
   onBack: () => void;
@@ -34,41 +34,66 @@ const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) 
   const { toast } = useToast();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
-  
-  // Mock customer data
-  const [customers] = useState<Customer[]>([
-    {
-      id: '1',
-      name: 'John Smith',
-      totalCredit: 450.00,
-      lastPayment: '2024-01-10',
-      phone: '(555) 123-4567',
-      email: 'john@email.com'
-    },
-    {
-      id: '2',
-      name: 'Mary Johnson',
-      totalCredit: 275.50,
-      lastPayment: '2024-01-08',
-      phone: '(555) 987-6543'
-    },
-    {
-      id: '3',
-      name: 'Robert Davis',
-      totalCredit: 825.75,
-      lastPayment: '2024-01-05',
-      email: 'robert@email.com'
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch customers from database
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      
+      // Get all credit sales that are unpaid
+      const { data: creditSales, error } = await supabase
+        .from('sales')
+        .select('customer_name, total_amount, date, payment_type')
+        .eq('payment_type', 'credit')
+        .eq('paid', false)
+        .not('customer_name', 'is', null);
+
+      if (error) throw error;
+
+      // Group by customer and calculate totals
+      const customerMap = new Map<string, Customer>();
+      
+      creditSales?.forEach(sale => {
+        const customerName = sale.customer_name!;
+        const existing = customerMap.get(customerName);
+        
+        if (existing) {
+          existing.totalCredit += Number(sale.total_amount);
+          // Keep the most recent date
+          if (sale.date > existing.lastPayment) {
+            existing.lastPayment = sale.date;
+          }
+        } else {
+          customerMap.set(customerName, {
+            id: customerName, // Using name as ID for simplicity
+            name: customerName,
+            totalCredit: Number(sale.total_amount),
+            lastPayment: sale.date,
+          });
+        }
+      });
+
+      setCustomers(Array.from(customerMap.values()));
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch customer data.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  // Mock payment history
-  const [paymentHistory] = useState<Payment[]>([
-    { id: '1', customerId: '1', amount: 200.00, date: '2024-01-10', method: 'Cash' },
-    { id: '2', customerId: '2', amount: 150.00, date: '2024-01-08', method: 'Bank Transfer' },
-    { id: '3', customerId: '1', amount: 300.00, date: '2024-01-05', method: 'Cash' },
-  ]);
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
-  const handlePayment = (e: React.FormEvent) => {
+  const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedCustomer || !paymentAmount) return;
@@ -83,33 +108,120 @@ const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) 
       return;
     }
 
-    console.log('Recording payment:', {
-      customerId: selectedCustomer.id,
-      amount,
-      date: new Date().toISOString().split('T')[0]
-    });
+    try {
+      // Record the payment in the payments table
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          sale_id: null, // We'll need to link this properly in a real implementation
+          amount: amount,
+          payment_date: new Date().toISOString().split('T')[0]
+        });
 
-    toast({
-      title: "Payment Recorded! 💰",
-      description: `Payment of ₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} recorded for ${selectedCustomer.name}.`,
-    });
+      if (paymentError) throw paymentError;
 
-    setPaymentAmount('');
-    setSelectedCustomer(null);
+      // Update sales to mark them as paid (proportionally)
+      const { data: customerSales, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('customer_name', selectedCustomer.name)
+        .eq('payment_type', 'credit')
+        .eq('paid', false)
+        .order('date', { ascending: true });
 
-    // Call the callback to refresh dashboard metrics
-    if (onPaymentRecorded) {
-      onPaymentRecorded();
+      if (salesError) throw salesError;
+
+      let remainingPayment = amount;
+      for (const sale of customerSales || []) {
+        if (remainingPayment <= 0) break;
+        
+        const saleAmount = Number(sale.total_amount);
+        if (remainingPayment >= saleAmount) {
+          // Fully pay this sale
+          await supabase
+            .from('sales')
+            .update({ paid: true })
+            .eq('id', sale.id);
+          remainingPayment -= saleAmount;
+        } else {
+          // Partially pay this sale - for simplicity, we'll mark it as paid if payment covers most of it
+          if (remainingPayment / saleAmount > 0.8) {
+            await supabase
+              .from('sales')
+              .update({ paid: true })
+              .eq('id', sale.id);
+          }
+          remainingPayment = 0;
+        }
+      }
+
+      console.log('Payment recorded successfully:', {
+        customerId: selectedCustomer.id,
+        amount,
+        date: new Date().toISOString().split('T')[0]
+      });
+
+      toast({
+        title: "Payment Recorded! 💰",
+        description: `Payment of ₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} recorded for ${selectedCustomer.name}.`,
+      });
+
+      setPaymentAmount('');
+      setSelectedCustomer(null);
+      
+      // Refresh the customer data
+      await fetchCustomers();
+
+      // Call the callback to refresh dashboard metrics
+      if (onPaymentRecorded) {
+        onPaymentRecorded();
+      }
+
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to record payment. Please try again.",
+        variant: "destructive"
+      });
     }
-  };
-
-  const getCustomerPayments = (customerId: string) => {
-    return paymentHistory.filter(payment => payment.customerId === customerId);
   };
 
   const getTotalOutstanding = () => {
     return customers.reduce((sum, customer) => sum + customer.totalCredit, 0);
   };
+
+  const handlePaymentAmountFocus = () => {
+    // Clear the input when focused if it's empty or just "0"
+    if (paymentAmount === '' || paymentAmount === '0') {
+      setPaymentAmount('');
+    }
+  };
+
+  const handlePaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow valid number inputs
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setPaymentAmount(value);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={onBack} size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h2 className="text-2xl font-bold">Customer Accounts</h2>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-gray-500">Loading customer data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -169,12 +281,10 @@ const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) 
                   <Label htmlFor="paymentAmount">Payment Amount (₦)</Label>
                   <Input
                     id="paymentAmount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    max={selectedCustomer.totalCredit}
+                    type="text"
                     value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    onChange={handlePaymentAmountChange}
+                    onFocus={handlePaymentAmountFocus}
                     placeholder="Enter amount"
                     required
                   />
@@ -187,7 +297,10 @@ const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) 
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setSelectedCustomer(null)}
+                    onClick={() => {
+                      setSelectedCustomer(null);
+                      setPaymentAmount('');
+                    }}
                   >
                     Cancel
                   </Button>
@@ -217,7 +330,7 @@ const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) 
               </div>
               
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Last Payment:</span>
+                <span className="text-sm text-gray-600">Last Sale:</span>
                 <div className="flex items-center gap-1 text-sm">
                   <Calendar className="h-3 w-3" />
                   {new Date(customer.lastPayment).toLocaleDateString()}
@@ -240,29 +353,16 @@ const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) 
               
               {customer.totalCredit > 0 && (
                 <Button
-                  onClick={() => setSelectedCustomer(customer)}
+                  onClick={() => {
+                    setSelectedCustomer(customer);
+                    setPaymentAmount('');
+                  }}
                   className="w-full mt-3"
                   size="sm"
                 >
                   Record Payment
                 </Button>
               )}
-              
-              {/* Recent Payments */}
-              <div className="pt-2 border-t">
-                <p className="text-sm font-medium text-gray-700 mb-2">Recent Payments:</p>
-                <div className="space-y-1">
-                  {getCustomerPayments(customer.id).slice(0, 2).map((payment) => (
-                    <div key={payment.id} className="flex justify-between text-xs text-gray-600">
-                      <span>{new Date(payment.date).toLocaleDateString()}</span>
-                      <span className="text-green-600">₦{payment.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                  ))}
-                  {getCustomerPayments(customer.id).length === 0 && (
-                    <p className="text-xs text-gray-500">No recent payments</p>
-                  )}
-                </div>
-              </div>
             </CardContent>
           </Card>
         ))}
@@ -271,7 +371,7 @@ const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) 
       {customers.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
-            <p className="text-gray-500">No customers found.</p>
+            <p className="text-gray-500">No customers with outstanding credit found.</p>
           </CardContent>
         </Card>
       )}

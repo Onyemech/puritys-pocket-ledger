@@ -25,11 +25,9 @@ const PaymentForm = ({
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!paymentAmount) return;
-    
     const amount = parseFloat(paymentAmount);
-    if (amount <= 0 || amount > selectedCustomer.totalCredit) {
+    if (isNaN(amount) || amount <= 0 || amount > selectedCustomer.totalCredit) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid payment amount.",
@@ -37,7 +35,6 @@ const PaymentForm = ({
       });
       return;
     }
-
     const success = await onRecordPayment(selectedCustomer, amount);
     if (success) {
       setPaymentAmount('');
@@ -46,7 +43,6 @@ const PaymentForm = ({
   };
 
   const handlePaymentAmountFocus = () => {
-    // Clear the input when focused if it's empty or just "0"
     if (paymentAmount === '' || paymentAmount === '0') {
       setPaymentAmount('');
     }
@@ -54,7 +50,7 @@ const PaymentForm = ({
 
   const handlePaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow valid number inputs
+    // Only allow valid number inputs or empty
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       setPaymentAmount(value);
     }
@@ -74,12 +70,13 @@ const PaymentForm = ({
                 ₦{selectedCustomer.totalCredit.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
               </div>
             </div>
-            
             <div>
               <Label htmlFor="paymentAmount">Payment Amount (₦)</Label>
               <Input
                 id="paymentAmount"
-                type="text"
+                type="number"
+                step="0.01"
+                min="0"
                 value={paymentAmount === '0' ? '' : paymentAmount}
                 onChange={handlePaymentAmountChange}
                 onFocus={handlePaymentAmountFocus}
@@ -87,7 +84,6 @@ const PaymentForm = ({
                 required
               />
             </div>
-
             <div className="flex items-end gap-2">
               <Button type="submit" className="flex-1">
                 Record Payment

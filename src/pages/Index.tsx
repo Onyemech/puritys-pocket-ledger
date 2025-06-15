@@ -76,6 +76,10 @@ const Index = () => {
     );
   }
 
+  // Dummy empty arrays for recent/monthly transactions for now (replace with logic/data later)
+  const recentTransactions = [];
+  const monthlyTransactions = [];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-100 via-pink-50 to-white">
       <Navbar />
@@ -224,8 +228,8 @@ const Index = () => {
           </CardContent>
         </Card>
         <HistoryCard 
-          recent={/* TODO: fetch and filter last 24hr transactions */}
-          monthly={/* TODO: fetch and filter last 30d transactions */}
+          recent={recentTransactions}
+          monthly={monthlyTransactions}
         />
       </div>
       {/* Push notification bell stub */}

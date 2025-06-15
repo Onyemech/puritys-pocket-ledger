@@ -1,6 +1,6 @@
 
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Tabs, Tab } from "@radix-ui/react-tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar, Users, Package } from "lucide-react";
 
 interface Transaction {
@@ -26,18 +26,18 @@ const HistoryCard = ({ recent, monthly }: HistoryCardProps) => {
         <p className="text-xs text-gray-500">Track all transactions</p>
       </CardHeader>
       <CardContent>
-        <Tabs.Root defaultValue="recent">
-          <Tabs.List className="flex space-x-4 mb-4">
-            <Tabs.Trigger value="recent" className="text-pink-700 hover:text-pink-900">Last 24 Hours</Tabs.Trigger>
-            <Tabs.Trigger value="monthly" className="text-pink-700 hover:text-pink-900">Last 30 Days</Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content value="recent">
+        <Tabs defaultValue="recent" className="w-full">
+          <TabsList className="flex space-x-4 mb-4 bg-transparent p-0">
+            <TabsTrigger value="recent" className="text-pink-700 hover:text-pink-900">Last 24 Hours</TabsTrigger>
+            <TabsTrigger value="monthly" className="text-pink-700 hover:text-pink-900">Last 30 Days</TabsTrigger>
+          </TabsList>
+          <TabsContent value="recent">
             <TransactionList transactions={recent} emptyMsg="No recent transactions." />
-          </Tabs.Content>
-          <Tabs.Content value="monthly">
+          </TabsContent>
+          <TabsContent value="monthly">
             <TransactionList transactions={monthly} emptyMsg="No transactions in last 30 days." />
-          </Tabs.Content>
-        </Tabs.Root>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
@@ -60,7 +60,9 @@ function TransactionList({ transactions, emptyMsg }: { transactions: Transaction
           </div>
           <div className="flex flex-row md:flex-col items-center md:items-end">
             <span className="mr-3 text-xs text-gray-500">{tx.customer || "—"}</span>
-            <span className="font-bold text-pink-700">₦{tx.amount?.toLocaleString?.("en-NG", { minimumFractionDigits: 2 })}</span>
+            <span className="font-bold text-pink-700">
+              ₦{tx.amount?.toLocaleString?.("en-NG", { minimumFractionDigits: 2 })}
+            </span>
             <span className="text-xs text-gray-400 ml-4">{new Date(tx.date).toLocaleDateString()}</span>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +32,7 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
       // Get all credit sales that are unpaid
       const { data: creditSales, error } = await supabase
         .from('sales')
-        .select('customer_name, total_amount, date, payment_type')
+        .select('id, customer_name, total_amount, date, payment_type')
         .eq('payment_type', 'credit')
         .eq('paid', false)
         .not('customer_name', 'is', null);
@@ -42,26 +41,53 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
       console.log('Fetched credit sales:', creditSales);
 
-      // Group by customer and calculate totals
+      // Get all payments for these sales
+      const saleIds = creditSales?.map(sale => sale.id) || [];
+      const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('sale_id, amount')
+        .in('sale_id', saleIds);
+
+      if (paymentsError) throw paymentsError;
+
+      console.log('Fetched payments:', payments);
+
+      // Create a map of payments by sale_id
+      const paymentMap = new Map<string, number>();
+      payments?.forEach(payment => {
+        const existing = paymentMap.get(payment.sale_id) || 0;
+        paymentMap.set(payment.sale_id, existing + Number(payment.amount));
+      });
+
+      // Group by customer and calculate remaining balances
       const customerMap = new Map<string, Customer>();
       
       creditSales?.forEach(sale => {
         const customerName = sale.customer_name!;
-        const existing = customerMap.get(customerName);
-        
-        if (existing) {
-          existing.totalCredit += Number(sale.total_amount);
-          // Keep the most recent date
-          if (sale.date > existing.lastPayment) {
-            existing.lastPayment = sale.date;
+        const saleAmount = Number(sale.total_amount);
+        const paidAmount = paymentMap.get(sale.id) || 0;
+        const remainingAmount = saleAmount - paidAmount;
+
+        console.log(`Sale ${sale.id}: amount=${saleAmount}, paid=${paidAmount}, remaining=${remainingAmount}`);
+
+        // Only include if there's still a remaining balance
+        if (remainingAmount > 0) {
+          const existing = customerMap.get(customerName);
+          
+          if (existing) {
+            existing.totalCredit += remainingAmount;
+            // Keep the most recent date
+            if (sale.date > existing.lastPayment) {
+              existing.lastPayment = sale.date;
+            }
+          } else {
+            customerMap.set(customerName, {
+              id: customerName, // Using name as ID for simplicity
+              name: customerName,
+              totalCredit: remainingAmount,
+              lastPayment: sale.date,
+            });
           }
-        } else {
-          customerMap.set(customerName, {
-            id: customerName, // Using name as ID for simplicity
-            name: customerName,
-            totalCredit: Number(sale.total_amount),
-            lastPayment: sale.date,
-          });
         }
       });
 

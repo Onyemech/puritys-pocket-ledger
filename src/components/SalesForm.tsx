@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -170,36 +171,37 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
-        <h2 className="text-2xl font-bold">Record Sale</h2>
+        <h2 className="text-2xl font-bold text-pink-600 tracking-wide drop-shadow-pink">Record Sale</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Sale Details</CardTitle>
+        <Card className="!border-pink-200 shadow-sm">
+          <CardHeader className="bg-pink-50/80 rounded-t-md border-b border-pink-100 mb-2 px-6 py-4">
+            <CardTitle className="text-pink-700 font-extrabold text-lg">Sale Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date" className="text-pink-600">Date</Label>
                 <Input
                   id="date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({...formData, date: e.target.value})}
                   required
+                  className="border-pink-200 focus:ring-2 focus:ring-pink-300"
                 />
               </div>
               
               <div>
-                <Label htmlFor="paymentType">Payment Type</Label>
+                <Label htmlFor="paymentType" className="text-pink-600">Payment Type</Label>
                 <Select value={formData.paymentType} onValueChange={(value) => {
                   setFormData({...formData, paymentType: value});
                   if (value === 'cash') {
                     setFormData(prev => ({...prev, customerName: '', dueDate: ''}));
                   }
                 }}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-pink-200 focus:ring-2 focus:ring-pink-300">
                     <SelectValue placeholder="Select payment type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -213,24 +215,26 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
             {formData.paymentType === 'credit' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="customerName">Customer Name</Label>
+                  <Label htmlFor="customerName" className="text-pink-600">Customer Name</Label>
                   <Input
                     id="customerName"
                     value={formData.customerName}
                     onChange={(e) => setFormData({...formData, customerName: e.target.value})}
                     placeholder="Enter customer name"
                     required={formData.paymentType === 'credit'}
+                    className="border-pink-200 focus:ring-2 focus:ring-pink-300"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="dueDate">Payment Due Date</Label>
+                  <Label htmlFor="dueDate" className="text-pink-600">Payment Due Date</Label>
                   <Input
                     id="dueDate"
                     type="date"
                     value={formData.dueDate}
                     onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
                     min={formData.date}
+                    className="border-pink-200 focus:ring-2 focus:ring-pink-300"
                   />
                 </div>
               </div>
@@ -238,30 +242,31 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Items Sold</CardTitle>
-            <Button type="button" onClick={addItem} size="sm" variant="outline">
+        <Card className="!border-pink-200 shadow-sm">
+          <CardHeader className="bg-pink-50/80 rounded-t-md border-b border-pink-100 mb-2 flex flex-row items-center justify-between space-y-0 pb-2 px-6 py-4">
+            <CardTitle className="text-rose-700 font-extrabold text-lg">Items Sold</CardTitle>
+            <Button type="button" onClick={addItem} size="sm" variant="outline" className="border-pink-300 text-pink-700 hover:bg-pink-100 hover:text-pink-900">
               <Plus className="h-4 w-4 mr-2" />
               Add Item
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-6 pb-6">
             {items.map((item, index) => (
-              <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
+              <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg border-pink-100 bg-pink-50/40">
                 <div className="md:col-span-2">
-                  <Label htmlFor={`item-name-${item.id}`}>Item Name</Label>
+                  <Label htmlFor={`item-name-${item.id}`} className="text-pink-600">Item Name</Label>
                   <Input
                     id={`item-name-${item.id}`}
                     value={item.name}
                     onChange={(e) => updateItem(item.id, 'name', e.target.value)}
                     placeholder="Enter item name"
                     required
+                    className="border-pink-200 focus:ring-2 focus:ring-pink-300"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor={`quantity-${item.id}`}>Quantity</Label>
+                  <Label htmlFor={`quantity-${item.id}`} className="text-pink-600">Quantity</Label>
                   <Input
                     id={`quantity-${item.id}`}
                     type="number"
@@ -270,12 +275,13 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                     onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
                     placeholder="Amount"
                     required
+                    className="border-pink-200 focus:ring-2 focus:ring-pink-300"
                   />
                 </div>
                 
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <Label htmlFor={`price-${item.id}`}>Price (₦)</Label>
+                    <Label htmlFor={`price-${item.id}`} className="text-pink-600">Price (₦)</Label>
                     <Input
                       id={`price-${item.id}`}
                       type="number"
@@ -285,6 +291,7 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                       onChange={(e) => updateItem(item.id, 'price', e.target.value)}
                       placeholder="Amount"
                       required
+                      className="border-pink-200 focus:ring-2 focus:ring-pink-300"
                     />
                   </div>
                   {items.length > 1 && (
@@ -292,16 +299,16 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="mt-6"
+                      className="mt-6 border-pink-300 hover:bg-rose-50"
                       onClick={() => removeItem(item.id)}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-rose-400" />
                     </Button>
                   )}
                 </div>
                 
                 <div className="md:col-span-4 text-right">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-rose-600 font-semibold">
                     Subtotal: ₦{((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -310,24 +317,29 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between text-xl font-bold">
-              <span>Total Amount:</span>
-              <span className="text-green-600">₦{calculateTotal().toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
-            </div>
+        <Card className="!border-pink-200 shadow-sm">
+          <CardContent className="pt-6 px-6 pb-6 flex items-center justify-between text-xl font-bold bg-pink-50/70 rounded-b-md">
+            <span className="text-pink-700">Total Amount:</span>
+            <span className="text-green-600 drop-shadow-sm border px-4 py-2 rounded-full bg-white border-green-200">{`₦${calculateTotal().toLocaleString('en-NG', { minimumFractionDigits: 2 })}`}</span>
           </CardContent>
         </Card>
 
         <div className="flex gap-4">
-          <Button type="button" variant="outline" onClick={onBack} className="flex-1">
+          <Button type="button" variant="outline" onClick={onBack} className="flex-1 border-pink-200 hover:bg-pink-50 hover:text-pink-700">
             Cancel
           </Button>
-          <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
+          <Button type="submit" className="flex-1 bg-pink-500 hover:bg-pink-600">
             Record Sale
           </Button>
         </div>
       </form>
+      <style>
+        {`
+          .drop-shadow-pink {
+            filter: drop-shadow(0 2px 5px rgba(236,72,153,0.11));
+          }
+        `}
+      </style>
     </div>
   );
 };

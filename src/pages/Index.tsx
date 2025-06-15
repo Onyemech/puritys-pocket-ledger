@@ -12,6 +12,8 @@ import ExpenseForm from "@/components/ExpenseForm";
 import InventoryList from "@/components/InventoryList";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
+import Navbar from "@/components/Navbar";
+import HistoryCard from "@/components/history/HistoryCard";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -75,44 +77,13 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <Package className="h-8 w-8 text-green-600" />
-              <h1 className="text-2xl font-bold text-gray-900">ShopKeeper</h1>
-            </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  {user?.email}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled>
-                  <User className="h-4 w-4 mr-2" />
-                  {user?.email}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-rose-100 via-pink-50 to-white">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Business Dashboard</h2>
-          <p className="text-gray-600">Track your sales, manage inventory, and grow your business</p>
+          <h2 className="text-3xl font-extrabold text-pink-700 mb-2">Welcome, Miss Purity!</h2>
+          <p className="text-pink-500">Track your sales, manage inventory, and stay happy 🙂</p>
         </div>
-
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -252,7 +223,33 @@ const Index = () => {
             )}
           </CardContent>
         </Card>
+        <HistoryCard 
+          recent={/* TODO: fetch and filter last 24hr transactions */}
+          monthly={/* TODO: fetch and filter last 30d transactions */}
+        />
       </div>
+      {/* Push notification bell stub */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button 
+          className="bg-pink-400 animate-pulse-pink rounded-full p-3 shadow-2xl text-white"
+          title="Get push notifications (coming soon!)"
+        >
+          <svg className="inline w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V5a1 1 0 10-2 0v.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 01-6 0" />
+          </svg>
+        </button>
+      </div>
+      <style>
+        {`
+          .animate-pulse-pink {
+            animation: pulsePink 2s cubic-bezier(0.4,0,0.6,1) infinite;
+          }
+          @keyframes pulsePink {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4); }
+            50% { box-shadow: 0 0 36px 12px rgba(244, 114, 182, 0.18); }
+          }
+        `}
+      </style>
     </div>
   );
 };

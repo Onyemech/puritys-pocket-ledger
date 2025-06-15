@@ -40,6 +40,8 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
       if (error) throw error;
 
+      console.log('Fetched credit sales:', creditSales);
+
       // Group by customer and calculate totals
       const customerMap = new Map<string, Customer>();
       
@@ -63,7 +65,9 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
         }
       });
 
-      setCustomers(Array.from(customerMap.values()));
+      const updatedCustomers = Array.from(customerMap.values());
+      console.log('Updated customers:', updatedCustomers);
+      setCustomers(updatedCustomers);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast({
@@ -78,6 +82,8 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
   const recordPayment = async (customer: Customer, amount: number) => {
     try {
+      console.log('Recording payment:', { customer: customer.name, amount });
+      
       // Get customer sales to update (oldest first)
       const { data: customerSales, error: salesError } = await supabase
         .from('sales')
@@ -93,14 +99,19 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
         throw new Error('No unpaid sales found for this customer');
       }
 
+      console.log('Customer sales found:', customerSales);
+
       let remainingPayment = amount;
       const paymentsToRecord = [];
+      const salesToUpdate = [];
 
       for (const sale of customerSales) {
         if (remainingPayment <= 0) break;
         
         const saleAmount = Number(sale.total_amount);
         const paymentForThisSale = Math.min(remainingPayment, saleAmount);
+        
+        console.log(`Processing sale ${sale.id}: amount=${saleAmount}, payment=${paymentForThisSale}`);
         
         // Record payment for this sale
         paymentsToRecord.push({
@@ -111,14 +122,14 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
         // If this payment fully covers the sale, mark it as paid
         if (paymentForThisSale >= saleAmount) {
-          await supabase
-            .from('sales')
-            .update({ paid: true })
-            .eq('id', sale.id);
+          salesToUpdate.push(sale.id);
         }
 
         remainingPayment -= paymentForThisSale;
       }
+
+      console.log('Payments to record:', paymentsToRecord);
+      console.log('Sales to mark as paid:', salesToUpdate);
 
       // Insert all payments
       const { error: paymentError } = await supabase
@@ -127,11 +138,22 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
       if (paymentError) throw paymentError;
 
+      // Update sales as paid
+      if (salesToUpdate.length > 0) {
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({ paid: true })
+          .in('id', salesToUpdate);
+
+        if (updateError) throw updateError;
+      }
+
       console.log('Payment recorded successfully:', {
         customerId: customer.id,
         amount,
         date: new Date().toISOString().split('T')[0],
-        paymentsRecorded: paymentsToRecord.length
+        paymentsRecorded: paymentsToRecord.length,
+        salesUpdated: salesToUpdate.length
       });
 
       toast({
@@ -139,8 +161,10 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
         description: `Payment of ₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} recorded for ${customer.name}.`,
       });
 
-      // Refresh the customer data immediately
+      // Refresh the customer data immediately and wait for it to complete
+      console.log('Refreshing customer data...');
       await fetchCustomers();
+      console.log('Customer data refreshed');
 
       // Call the callback to refresh dashboard metrics
       if (onPaymentRecorded) {

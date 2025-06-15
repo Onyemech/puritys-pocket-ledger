@@ -15,25 +15,40 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
   const activities: RecentActivity[] = [];
   
   try {
-    console.log('Fetching recent sales...');
-    // Fetch recent sales (last 10)
+    console.log('Fetching recent sales with items...');
+    // Fetch recent sales with their items (last 5)
     const { data: salesData, error: salesError } = await supabase
       .from('sales')
-      .select('id, customer_name, total_amount, payment_type, created_at')
+      .select(`
+        id, 
+        customer_name, 
+        total_amount, 
+        payment_type, 
+        created_at,
+        sale_items(item_name, quantity)
+      `)
       .order('created_at', { ascending: false })
       .limit(5);
 
     if (salesError) {
       console.error('Error fetching sales:', salesError);
     } else {
-      console.log('Sales data:', salesData);
+      console.log('Sales data with items:', salesData);
       if (salesData) {
         salesData.forEach(sale => {
+          // Get the first item name or show multiple items count
+          const itemNames = sale.sale_items?.map(item => item.item_name) || [];
+          const itemDescription = itemNames.length > 0 
+            ? itemNames.length === 1 
+              ? itemNames[0]
+              : `${itemNames[0]} + ${itemNames.length - 1} more items`
+            : 'Items';
+
           activities.push({
             id: sale.id,
             type: 'sale',
             title: `Sale to ${sale.customer_name || 'Customer'}`,
-            description: `₦${Number(sale.total_amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`,
+            description: `${itemDescription} • ₦${Number(sale.total_amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`,
             badge: sale.payment_type === 'cash' ? 'Cash' : 'Credit',
             badgeVariant: sale.payment_type === 'cash' ? 'secondary' : 'outline',
             timestamp: sale.created_at
@@ -43,7 +58,7 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
     }
 
     console.log('Fetching recent payments...');
-    // Fetch recent payments (last 5)
+    // Fetch recent payments (last 3)
     const { data: paymentsData, error: paymentsError } = await supabase
       .from('payments')
       .select(`

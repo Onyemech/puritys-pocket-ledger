@@ -1,6 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  fetchCreditSales, 
+  fetchPaymentsForSales 
+} from '@/services/customerService';
+import { 
+  createPaymentMap, 
+  processCustomerData 
+} from '@/utils/customerUtils';
 
 interface DashboardMetrics {
   todaySales: number;
@@ -36,16 +44,13 @@ export const useDashboardMetrics = (): DashboardMetrics => {
 
       const todaySales = todaySalesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
 
-      // Get credit outstanding (unpaid credit sales)
-      const { data: creditData, error: creditError } = await supabase
-        .from('sales')
-        .select('total_amount')
-        .eq('payment_type', 'credit')
-        .eq('paid', false);
-
-      if (creditError) throw creditError;
-
-      const creditOutstanding = creditData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
+      // Get credit outstanding using the same logic as customer accounts
+      const creditSales = await fetchCreditSales();
+      const saleIds = creditSales?.map(sale => sale.id) || [];
+      const payments = await fetchPaymentsForSales(saleIds);
+      const paymentMap = createPaymentMap(payments || []);
+      const customers = processCustomerData(creditSales || [], paymentMap);
+      const creditOutstanding = customers.reduce((sum, customer) => sum + customer.totalCredit, 0);
 
       // Get low stock items count
       const { data: inventoryData, error: inventoryError } = await supabase

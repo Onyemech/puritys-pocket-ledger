@@ -12,6 +12,7 @@ import ExpenseForm from "@/components/ExpenseForm";
 import InventoryList from "@/components/InventoryList";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import Navbar from "@/components/Navbar";
 import HistoryCard from "@/components/history/HistoryCard";
 import DashboardStats from "@/components/dashboard/DashboardStats";
@@ -35,9 +36,18 @@ const Index = () => {
     loading: activitiesLoading,
     refetch: refetchActivities
   } = useRecentActivity();
+  const {
+    recent,
+    monthly,
+    loading: historyLoading,
+    error: historyError,
+    refetch: refetchHistory
+  } = useTransactionHistory();
+
   const handleRefreshData = () => {
     refetchMetrics();
     refetchActivities();
+    refetchHistory();
   };
   const handleSignOut = async () => {
     await signOut();
@@ -74,7 +84,7 @@ const Index = () => {
         <DashboardStats todaySales={todaySales} creditOutstanding={creditOutstanding} lowStockItems={lowStockItems} loading={metricsLoading} />
         <QuickActions onSetView={setCurrentView} />
         <RecentActivityCard activities={activities} loading={activitiesLoading} />
-        <HistoryCard recent={recentTransactions} monthly={monthlyTransactions} />
+        <HistoryCard recent={recent} monthly={monthly} loading={historyLoading} error={historyError} />
       </div>
       <div className="fixed bottom-6 right-6 z-50">
         <button className="bg-pink-400 animate-pulse-pink rounded-full p-3 shadow-2xl text-white" title="Get push notifications (coming soon!)">

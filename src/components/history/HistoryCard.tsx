@@ -3,6 +3,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar, Users, Package } from "lucide-react";
 
+// added loading and error props
 interface Transaction {
   id: string;
   date: string;
@@ -16,9 +17,11 @@ interface Transaction {
 interface HistoryCardProps {
   recent: Transaction[];
   monthly: Transaction[];
+  loading?: boolean;
+  error?: string | null;
 }
 
-const HistoryCard = ({ recent, monthly }: HistoryCardProps) => {
+const HistoryCard = ({ recent, monthly, loading, error }: HistoryCardProps) => {
   return (
     <Card className="mt-8 bg-white/80 border-pink-200 shadow-md rounded-2xl">
       <CardHeader>
@@ -32,10 +35,10 @@ const HistoryCard = ({ recent, monthly }: HistoryCardProps) => {
             <TabsTrigger value="monthly" className="text-pink-700 hover:text-pink-900">Last 30 Days</TabsTrigger>
           </TabsList>
           <TabsContent value="recent">
-            <TransactionList transactions={recent} emptyMsg="No recent transactions." />
+            <TransactionList transactions={recent} emptyMsg="No recent transactions." loading={loading} error={error} />
           </TabsContent>
           <TabsContent value="monthly">
-            <TransactionList transactions={monthly} emptyMsg="No transactions in last 30 days." />
+            <TransactionList transactions={monthly} emptyMsg="No transactions in last 30 days." loading={loading} error={error} />
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -43,8 +46,21 @@ const HistoryCard = ({ recent, monthly }: HistoryCardProps) => {
   );
 };
 
-function TransactionList({ transactions, emptyMsg }: { transactions: Transaction[]; emptyMsg: string }) {
-  if (!transactions?.length) return <div className="text-center py-6 text-gray-400">{emptyMsg}</div>;
+function TransactionList({
+  transactions,
+  emptyMsg,
+  loading,
+  error,
+}: {
+  transactions: Transaction[];
+  emptyMsg: string;
+  loading?: boolean;
+  error?: string | null;
+}) {
+  if (loading) return <div className="text-center py-6 text-pink-400 font-semibold animate-pulse">Loading...</div>;
+  if (error) return <div className="text-center py-6 text-red-500">{error}</div>;
+  if (!transactions?.length)
+    return <div className="text-center py-6 text-gray-400">{emptyMsg}</div>;
   return (
     <div className="divide-y divide-rose-100">
       {transactions.map(tx => (
@@ -63,7 +79,11 @@ function TransactionList({ transactions, emptyMsg }: { transactions: Transaction
             <span className="font-bold text-pink-700">
               ₦{tx.amount?.toLocaleString?.("en-NG", { minimumFractionDigits: 2 })}
             </span>
-            <span className="text-xs text-gray-400 ml-4">{new Date(tx.date).toLocaleDateString()}</span>
+            <span className="text-xs text-gray-400 ml-4">
+              {tx.date && !isNaN(Date.parse(tx.date))
+                ? new Date(tx.date).toLocaleDateString()
+                : "--"}
+            </span>
           </div>
         </div>
       ))}
@@ -71,3 +91,4 @@ function TransactionList({ transactions, emptyMsg }: { transactions: Transaction
   );
 }
 export default HistoryCard;
+

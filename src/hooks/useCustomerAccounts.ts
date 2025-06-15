@@ -139,7 +139,7 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
         description: `Payment of ₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} recorded for ${customer.name}.`,
       });
 
-      // Refresh the customer data
+      // Refresh the customer data immediately
       await fetchCustomers();
 
       // Call the callback to refresh dashboard metrics

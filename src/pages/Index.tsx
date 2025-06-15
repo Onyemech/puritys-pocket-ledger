@@ -3,21 +3,18 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, ShoppingCart, Users, AlertTriangle, Plus, FileText, Bell } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, AlertTriangle, Plus, FileText, Bell, Loader2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import SalesForm from '@/components/SalesForm';
 import InventoryList from '@/components/InventoryList';
 import CustomerAccounts from '@/components/CustomerAccounts';
 import ExpenseForm from '@/components/ExpenseForm';
 import Reports from '@/components/Reports';
+import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  // Mock data for demonstration
-  const todaySales = 2450.00;
-  const creditOutstanding = 8750.00;
-  const lowStockItems = 3;
+  const { todaySales, creditOutstanding, lowStockItems, loading, error } = useDashboardMetrics();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -41,14 +38,18 @@ const Index = () => {
                   <CardTitle className="text-sm font-medium text-blue-700">
                     Today's Sales
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-blue-600" />
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                  ) : (
+                    <DollarSign className="h-4 w-4 text-blue-600" />
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-800">
-                    ${todaySales.toFixed(2)}
+                    {loading ? 'Loading...' : error ? 'Error' : `$${todaySales.toFixed(2)}`}
                   </div>
                   <p className="text-xs text-blue-600 mt-1">
-                    +12% from yesterday
+                    {error ? error : 'Calculated from today\'s sales'}
                   </p>
                 </CardContent>
               </Card>
@@ -58,14 +59,18 @@ const Index = () => {
                   <CardTitle className="text-sm font-medium text-amber-700">
                     Credit Outstanding
                   </CardTitle>
-                  <Users className="h-4 w-4 text-amber-600" />
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 text-amber-600 animate-spin" />
+                  ) : (
+                    <Users className="h-4 w-4 text-amber-600" />
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-amber-800">
-                    ${creditOutstanding.toFixed(2)}
+                    {loading ? 'Loading...' : error ? 'Error' : `$${creditOutstanding.toFixed(2)}`}
                   </div>
                   <p className="text-xs text-amber-600 mt-1">
-                    12 customers pending
+                    {error ? error : 'From unpaid credit sales'}
                   </p>
                 </CardContent>
               </Card>
@@ -75,14 +80,18 @@ const Index = () => {
                   <CardTitle className="text-sm font-medium text-red-700">
                     Low Stock Items
                   </CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 text-red-600 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-800">
-                    {lowStockItems}
+                    {loading ? 'Loading...' : error ? 'Error' : lowStockItems}
                   </div>
                   <p className="text-xs text-red-600 mt-1">
-                    Requires attention
+                    {error ? error : 'Items below threshold'}
                   </p>
                 </CardContent>
               </Card>

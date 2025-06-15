@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SalesFormProps {
@@ -23,6 +23,8 @@ interface SaleItem {
 
 const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     customerName: '',
@@ -67,6 +69,15 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to record sales.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Validation
     if (!formData.paymentType) {
       toast({
@@ -89,7 +100,7 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
     const total = calculateTotal();
     
     try {
-      // Insert sale into database
+      // Insert sale into database with user_id
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .insert({
@@ -98,7 +109,8 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
           payment_type: formData.paymentType,
           total_amount: total,
           due_date: formData.paymentType === 'credit' ? formData.dueDate || null : null,
-          paid: formData.paymentType === 'cash'
+          paid: formData.paymentType === 'cash',
+          user_id: user.id
         })
         .select()
         .single();

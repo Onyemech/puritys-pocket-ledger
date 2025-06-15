@@ -17,6 +17,7 @@ export type Database = {
           date: string
           description: string | null
           id: string
+          user_id: string | null
         }
         Insert: {
           amount: number
@@ -25,6 +26,7 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
@@ -33,6 +35,7 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -46,6 +49,7 @@ export type Database = {
           price: number
           quantity: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -56,6 +60,7 @@ export type Database = {
           price: number
           quantity?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -66,6 +71,7 @@ export type Database = {
           price?: number
           quantity?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -100,6 +106,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       sale_items: {
         Row: {
@@ -146,6 +179,7 @@ export type Database = {
           paid: boolean
           payment_type: string
           total_amount: number
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -156,6 +190,7 @@ export type Database = {
           paid?: boolean
           payment_type: string
           total_amount: number
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -166,6 +201,7 @@ export type Database = {
           paid?: boolean
           payment_type?: string
           total_amount?: number
+          user_id?: string | null
         }
         Relationships: []
       }

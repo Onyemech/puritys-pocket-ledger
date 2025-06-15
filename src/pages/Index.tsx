@@ -1,238 +1,259 @@
-
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DollarSign, ShoppingCart, Users, AlertTriangle, Plus, FileText, Bell, Loader2 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import SalesForm from '@/components/SalesForm';
-import InventoryList from '@/components/InventoryList';
-import CustomerAccounts from '@/components/CustomerAccounts';
-import ExpenseForm from '@/components/ExpenseForm';
-import Reports from '@/components/Reports';
-import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
-import { useRecentActivity } from '@/hooks/useRecentActivity';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, TrendingUp, DollarSign, Users, Package, AlertTriangle, LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import SalesForm from "@/components/SalesForm";
+import CustomerAccounts from "@/components/CustomerAccounts";
+import Reports from "@/components/Reports";
+import ExpenseForm from "@/components/ExpenseForm";
+import InventoryList from "@/components/InventoryList";
+import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { useRecentActivity } from "@/hooks/useRecentActivity";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const { todaySales, creditOutstanding, lowStockItems, loading, error, refetch } = useDashboardMetrics();
-  const { activities, loading: activitiesLoading, refetch: refetchActivity } = useRecentActivity();
+  const { user, signOut } = useAuth();
+  const [currentView, setCurrentView] = useState<'dashboard' | 'sales' | 'customers' | 'reports' | 'expenses' | 'inventory'>('dashboard');
+  
+  const { 
+    todaySales, 
+    creditOutstanding, 
+    lowStockItems, 
+    loading: metricsLoading,
+    refetch: refetchMetrics 
+  } = useDashboardMetrics();
+  
+  const { activities, loading: activitiesLoading, refetch: refetchActivities } = useRecentActivity();
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    // Refetch metrics when returning to dashboard
-    if (tab === 'dashboard') {
-      refetch();
-      refetchActivity();
-    }
+  const handleRefreshData = () => {
+    refetchMetrics();
+    refetchActivities();
   };
 
-  const handleSaleRecorded = () => {
-    refetch();
-    refetchActivity();
+  const handleSignOut = async () => {
+    await signOut();
   };
 
-  const handlePaymentRecorded = () => {
-    refetch();
-    refetchActivity();
-  };
+  if (currentView === 'sales') {
+    return (
+      <SalesForm 
+        onBack={() => setCurrentView('dashboard')} 
+        onSaleRecorded={handleRefreshData}
+      />
+    );
+  }
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'sales':
-        return <SalesForm onBack={() => handleTabChange('dashboard')} onSaleRecorded={handleSaleRecorded} />;
-      case 'inventory':
-        return <InventoryList onBack={() => handleTabChange('dashboard')} />;
-      case 'customers':
-        return <CustomerAccounts onBack={() => handleTabChange('dashboard')} onPaymentRecorded={handlePaymentRecorded} />;
-      case 'expenses':
-        return <ExpenseForm onBack={() => handleTabChange('dashboard')} />;
-      case 'reports':
-        return <Reports onBack={() => handleTabChange('dashboard')} />;
-      default:
-        return (
-          <div className="space-y-6">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-700">
-                    Today's Sales
-                  </CardTitle>
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
-                  ) : (
-                    <DollarSign className="h-4 w-4 text-blue-600" />
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-800">
-                    {loading ? 'Loading...' : error ? 'Error' : `₦${todaySales.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`}
-                  </div>
-                  <p className="text-xs text-blue-600 mt-1">
-                    {error ? error : 'Calculated from today\'s sales'}
-                  </p>
-                </CardContent>
-              </Card>
+  if (currentView === 'customers') {
+    return (
+      <CustomerAccounts 
+        onBack={() => setCurrentView('dashboard')}
+        onPaymentRecorded={handleRefreshData}
+      />
+    );
+  }
 
-              <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-amber-700">
-                    Credit Outstanding
-                  </CardTitle>
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 text-amber-600 animate-spin" />
-                  ) : (
-                    <Users className="h-4 w-4 text-amber-600" />
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-amber-800">
-                    {loading ? 'Loading...' : error ? 'Error' : `₦${creditOutstanding.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`}
-                  </div>
-                  <p className="text-xs text-amber-600 mt-1">
-                    {error ? error : 'From unpaid credit sales'}
-                  </p>
-                </CardContent>
-              </Card>
+  if (currentView === 'reports') {
+    return (
+      <Reports onBack={() => setCurrentView('dashboard')} />
+    );
+  }
 
-              <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-red-700">
-                    Low Stock Items
-                  </CardTitle>
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 text-red-600 animate-spin" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-800">
-                    {loading ? 'Loading...' : error ? 'Error' : lowStockItems}
-                  </div>
-                  <p className="text-xs text-red-600 mt-1">
-                    {error ? error : 'Items below threshold'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+  if (currentView === 'expenses') {
+    return (
+      <ExpenseForm 
+        onBack={() => setCurrentView('dashboard')}
+        onExpenseRecorded={handleRefreshData}
+      />
+    );
+  }
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Button 
-                    onClick={() => handleTabChange('sales')}
-                    className="h-20 flex flex-col items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                  >
-                    <ShoppingCart className="h-6 w-6" />
-                    <span className="text-sm">Record Sale</span>
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => handleTabChange('inventory')}
-                    variant="outline"
-                    className="h-20 flex flex-col items-center gap-2 border-green-200 hover:bg-green-50"
-                  >
-                    <Plus className="h-6 w-6 text-green-600" />
-                    <span className="text-sm text-green-700">Add Inventory</span>
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => handleTabChange('customers')}
-                    variant="outline"
-                    className="h-20 flex flex-col items-center gap-2 border-purple-200 hover:bg-purple-50"
-                  >
-                    <Users className="h-6 w-6 text-purple-600" />
-                    <span className="text-sm text-purple-700">Customers</span>
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => handleTabChange('reports')}
-                    variant="outline"
-                    className="h-20 flex flex-col items-center gap-2 border-orange-200 hover:bg-orange-50"
-                  >
-                    <FileText className="h-6 w-6 text-orange-600" />
-                    <span className="text-sm text-orange-700">Reports</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activitiesLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    <span className="ml-2">Loading recent activity...</span>
-                  </div>
-                ) : activities.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No recent activity found
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {activities.map((activity) => (
-                      <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-2 h-2 rounded-full ${
-                            activity.type === 'sale' ? 'bg-green-500' :
-                            activity.type === 'payment' ? 'bg-amber-500' :
-                            activity.type === 'inventory' ? 'bg-blue-500' :
-                            'bg-purple-500'
-                          }`}></div>
-                          <div>
-                            <p className="font-medium">{activity.title}</p>
-                            <p className="text-sm text-gray-600">{activity.description}</p>
-                          </div>
-                        </div>
-                        <Badge 
-                          variant={activity.badgeVariant}
-                          className={
-                            activity.badge === 'Credit' && activity.badgeVariant === 'default' 
-                              ? 'bg-amber-100 text-amber-800' 
-                              : ''
-                          }
-                        >
-                          {activity.badge}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        );
-    }
-  };
+  if (currentView === 'inventory') {
+    return (
+      <InventoryList onBack={() => setCurrentView('dashboard')} />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {renderContent()}
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <Package className="h-8 w-8 text-green-600" />
+              <h1 className="text-2xl font-bold text-gray-900">ShopKeeper</h1>
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {user?.email}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled>
+                  <User className="h-4 w-4 mr-2" />
+                  {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
       </div>
 
-      {/* Floating Notification Button */}
-      <Button 
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700"
-        size="icon"
-      >
-        <Bell className="h-6 w-6" />
-      </Button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Business Dashboard</h2>
+          <p className="text-gray-600">Track your sales, manage inventory, and grow your business</p>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {metricsLoading ? "Loading..." : `₦${todaySales.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`}
+              </div>
+              <p className="text-xs text-muted-foreground">Revenue generated today</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Credit Outstanding</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {metricsLoading ? "Loading..." : `₦${creditOutstanding.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`}
+              </div>
+              <p className="text-xs text-muted-foreground">Amount owed by customers</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Low Stock Alert</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {metricsLoading ? "Loading..." : lowStockItems}
+              </div>
+              <p className="text-xs text-muted-foreground">Items running low</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('sales')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Record Sale
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Add new sales transactions and manage payments</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('customers')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Customer Accounts
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Manage credit sales and customer payments</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('inventory')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Inventory
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Track stock levels and manage products</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('expenses')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Record Expense
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Track business expenses and costs</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('reports')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Reports
+                <TrendingUp className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">View sales reports and business analytics</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activitiesLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading recent activity...</p>
+              </div>
+            ) : activities.length > 0 ? (
+              <div className="space-y-4">
+                {activities.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between py-3 border-b last:border-b-0">
+                    <div>
+                      <h4 className="font-medium">{activity.title}</h4>
+                      <p className="text-sm text-gray-600">{activity.description}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant={activity.badgeVariant}>{activity.badge}</Badge>
+                      <span className="text-sm text-gray-500">
+                        {new Date(activity.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No recent activity found.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

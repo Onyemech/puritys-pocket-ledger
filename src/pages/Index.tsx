@@ -1,8 +1,7 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, TrendingUp, DollarSign, Users, Package, AlertTriangle, LogOut, User } from "lucide-react";
+import { ArrowRight, TrendingUp, DollarSign, Users, Package, AlertTriangle, LogOut, User, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SalesForm from "@/components/SalesForm";
@@ -14,16 +13,20 @@ import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import Navbar from "@/components/Navbar";
-import HistoryCard from "@/components/history/HistoryCard";
 import DashboardStats from "@/components/dashboard/DashboardStats";
 import QuickActions from "@/components/dashboard/QuickActions";
 import RecentActivityCard from "@/components/dashboard/RecentActivityCard";
+import HistoryPage from "./History"; // <-- New import
+
 const Index = () => {
   const {
     user,
     signOut
   } = useAuth();
-  const [currentView, setCurrentView] = useState<"dashboard" | "sales" | "customers" | "reports" | "expenses" | "inventory">("dashboard");
+  const [currentView, setCurrentView] = useState<
+    "dashboard" | "sales" | "customers" | "reports" | "expenses" | "inventory" | "history"
+  >("dashboard");
+
   const {
     todaySales,
     creditOutstanding,
@@ -52,6 +55,7 @@ const Index = () => {
   const handleSignOut = async () => {
     await signOut();
   };
+
   if (currentView === "sales") {
     return <SalesForm onBack={() => setCurrentView("dashboard")} onSaleRecorded={handleRefreshData} />;
   }
@@ -67,10 +71,18 @@ const Index = () => {
   if (currentView === "inventory") {
     return <InventoryList onBack={() => setCurrentView("dashboard")} />;
   }
+  if (currentView === "history") {
+    return (
+      <HistoryPage
+        recent={recent}
+        monthly={monthly}
+        loading={historyLoading}
+        error={historyError}
+        onBack={() => setCurrentView("dashboard")}
+      />
+    );
+  }
 
-  // Dummy empty arrays for recent/monthly transactions for now
-  const recentTransactions: any[] = [];
-  const monthlyTransactions: any[] = [];
   return (
     <div className="animated-pink-bg">
       <Navbar />
@@ -82,9 +94,78 @@ const Index = () => {
           </p>
         </div>
         <DashboardStats todaySales={todaySales} creditOutstanding={creditOutstanding} lowStockItems={lowStockItems} loading={metricsLoading} />
-        <QuickActions onSetView={setCurrentView} />
+        {/* QuickActions replaced with custom actions below */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('sales')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Record Sale
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Add new sales transactions and manage payments</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('customers')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Customer Accounts
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Manage credit sales and customer payments</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('inventory')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Inventory
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Track stock levels and manage products</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('expenses')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Record Expense
+                <ArrowRight className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">Track business expenses and costs</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('reports')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Reports
+                <TrendingUp className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">View sales reports and business analytics</p>
+            </CardContent>
+          </Card>
+          {/* NEW HISTORY CARD */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('history')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                History
+                <Clock className="h-5 w-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">View transaction history for last 24h or 30 days</p>
+            </CardContent>
+          </Card>
+        </div>
         <RecentActivityCard activities={activities} loading={activitiesLoading} />
-        <HistoryCard recent={recent} monthly={monthly} loading={historyLoading} error={historyError} />
+        {/* HistoryCard removed from here */}
       </div>
       <div className="fixed bottom-6 right-6 z-50">
         <button className="bg-pink-400 animate-pulse-pink rounded-full p-3 shadow-2xl text-white" title="Get push notifications (coming soon!)">

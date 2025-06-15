@@ -266,9 +266,9 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                     id={`quantity-${item.id}`}
                     type="number"
                     min="1"
-                    value={item.quantity}
+                    value={item.quantity === '0' ? '' : item.quantity}
                     onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                    placeholder="Enter quantity"
+                    placeholder="Amount"
                     required
                   />
                 </div>
@@ -281,9 +281,9 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={item.price}
+                      value={item.price === '0' ? '' : item.price}
                       onChange={(e) => updateItem(item.id, 'price', e.target.value)}
-                      placeholder="Enter price"
+                      placeholder="Amount"
                       required
                     />
                   </div>

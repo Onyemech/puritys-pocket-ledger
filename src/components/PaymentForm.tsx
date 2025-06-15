@@ -80,10 +80,10 @@ const PaymentForm = ({
               <Input
                 id="paymentAmount"
                 type="text"
-                value={paymentAmount}
+                value={paymentAmount === '0' ? '' : paymentAmount}
                 onChange={handlePaymentAmountChange}
                 onFocus={handlePaymentAmountFocus}
-                placeholder="Enter amount"
+                placeholder="Amount"
                 required
               />
             </div>
@@ -108,3 +108,4 @@ const PaymentForm = ({
 };
 
 export default PaymentForm;
+

@@ -27,7 +27,7 @@ const ExpenseForm = ({ onBack }: ExpenseFormProps) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     category: "",
-    amount: 0,
+    amount: 0, // For first render, amount is 0, but will be handled as '' in input
     description: "",
   });
 

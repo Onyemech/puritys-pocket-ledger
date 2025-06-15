@@ -46,7 +46,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-800">
-                    {loading ? 'Loading...' : error ? 'Error' : `$${todaySales.toFixed(2)}`}
+                    {loading ? 'Loading...' : error ? 'Error' : `₦${todaySales.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`}
                   </div>
                   <p className="text-xs text-blue-600 mt-1">
                     {error ? error : 'Calculated from today\'s sales'}
@@ -67,7 +67,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-amber-800">
-                    {loading ? 'Loading...' : error ? 'Error' : `$${creditOutstanding.toFixed(2)}`}
+                    {loading ? 'Loading...' : error ? 'Error' : `₦${creditOutstanding.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`}
                   </div>
                   <p className="text-xs text-amber-600 mt-1">
                     {error ? error : 'From unpaid credit sales'}
@@ -157,7 +157,7 @@ const Index = () => {
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <div>
                         <p className="font-medium">Sale to John Smith</p>
-                        <p className="text-sm text-gray-600">2 items • $125.50</p>
+                        <p className="text-sm text-gray-600">2 items • ₦125.50</p>
                       </div>
                     </div>
                     <Badge variant="secondary">Cash</Badge>
@@ -179,7 +179,7 @@ const Index = () => {
                       <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                       <div>
                         <p className="font-medium">Payment Received</p>
-                        <p className="text-sm text-gray-600">Mary Johnson • $200.00</p>
+                        <p className="text-sm text-gray-600">Mary Johnson • ₦200.00</p>
                       </div>
                     </div>
                     <Badge className="bg-amber-100 text-amber-800">Credit</Badge>

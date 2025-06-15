@@ -85,7 +85,7 @@ const SalesForm = ({ onBack }: SalesFormProps) => {
     
     toast({
       title: "Sale Recorded! 🎉",
-      description: `Sale of $${total.toFixed(2)} has been recorded successfully.`,
+      description: `Sale of ₦${total.toLocaleString('en-NG', { minimumFractionDigits: 2 })} has been recorded successfully.`,
     });
     
     // Reset form
@@ -209,7 +209,7 @@ const SalesForm = ({ onBack }: SalesFormProps) => {
                 
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <Label htmlFor={`price-${item.id}`}>Price ($)</Label>
+                    <Label htmlFor={`price-${item.id}`}>Price (₦)</Label>
                     <Input
                       id={`price-${item.id}`}
                       type="number"
@@ -235,7 +235,7 @@ const SalesForm = ({ onBack }: SalesFormProps) => {
                 
                 <div className="md:col-span-4 text-right">
                   <span className="text-sm text-gray-600">
-                    Subtotal: ${(item.quantity * item.price).toFixed(2)}
+                    Subtotal: ₦{(item.quantity * item.price).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
@@ -247,7 +247,7 @@ const SalesForm = ({ onBack }: SalesFormProps) => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between text-xl font-bold">
               <span>Total Amount:</span>
-              <span className="text-green-600">${calculateTotal().toFixed(2)}</span>
+              <span className="text-green-600">₦{calculateTotal().toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
             </div>
           </CardContent>
         </Card>

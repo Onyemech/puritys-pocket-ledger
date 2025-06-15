@@ -11,7 +11,9 @@ export const useRecentActivity = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching recent activity...');
       const data = await fetchRecentActivity();
+      console.log('Recent activity data:', data);
       setActivities(data);
     } catch (err) {
       console.error('Error in useRecentActivity:', err);

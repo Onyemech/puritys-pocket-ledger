@@ -16,24 +16,35 @@ import { useRecentActivity } from '@/hooks/useRecentActivity';
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { todaySales, creditOutstanding, lowStockItems, loading, error, refetch } = useDashboardMetrics();
-  const { activities, loading: activitiesLoading } = useRecentActivity();
+  const { activities, loading: activitiesLoading, refetch: refetchActivity } = useRecentActivity();
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     // Refetch metrics when returning to dashboard
     if (tab === 'dashboard') {
       refetch();
+      refetchActivity();
     }
+  };
+
+  const handleSaleRecorded = () => {
+    refetch();
+    refetchActivity();
+  };
+
+  const handlePaymentRecorded = () => {
+    refetch();
+    refetchActivity();
   };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'sales':
-        return <SalesForm onBack={() => handleTabChange('dashboard')} onSaleRecorded={refetch} />;
+        return <SalesForm onBack={() => handleTabChange('dashboard')} onSaleRecorded={handleSaleRecorded} />;
       case 'inventory':
         return <InventoryList onBack={() => handleTabChange('dashboard')} />;
       case 'customers':
-        return <CustomerAccounts onBack={() => handleTabChange('dashboard')} onPaymentRecorded={refetch} />;
+        return <CustomerAccounts onBack={() => handleTabChange('dashboard')} onPaymentRecorded={handlePaymentRecorded} />;
       case 'expenses':
         return <ExpenseForm onBack={() => handleTabChange('dashboard')} />;
       case 'reports':

@@ -61,7 +61,8 @@ const Index = () => {
   // Dummy empty arrays for recent/monthly transactions for now
   const recentTransactions: any[] = [];
   const monthlyTransactions: any[] = [];
-  return <div className="min-h-screen bg-gradient-to-br from-rose-100 via-pink-50 to-white">
+  return (
+    <div className="animated-pink-bg">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -93,6 +94,7 @@ const Index = () => {
           }
         `}
       </style>
-    </div>;
+    </div>
+  );
 };
 export default Index;

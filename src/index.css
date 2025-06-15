@@ -101,3 +101,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+.animated-pink-bg {
+  /* Make sure gradient covers entire screen and animates smoothly */
+  min-height: 100vh;
+  background: linear-gradient(120deg, #fce7f3 0%, #f9a8d4 40%, #f472b6 100%);
+  background-size: 200% 200%;
+  animation: pink-bg-move 9s ease-in-out infinite alternate;
+}
+
+@keyframes pink-bg-move {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

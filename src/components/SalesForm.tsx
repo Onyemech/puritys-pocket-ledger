@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +17,8 @@ interface SalesFormProps {
 interface SaleItem {
   id: string;
   name: string;
-  quantity: number;
-  price: number;
+  quantity: string;
+  price: string;
 }
 
 const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
@@ -30,15 +31,15 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
   });
   
   const [items, setItems] = useState<SaleItem[]>([
-    { id: '1', name: '', quantity: 1, price: 0 }
+    { id: '1', name: '', quantity: '', price: '' }
   ]);
 
   const addItem = () => {
     const newItem: SaleItem = {
       id: Date.now().toString(),
       name: '',
-      quantity: 1,
-      price: 0
+      quantity: '',
+      price: ''
     };
     setItems([...items, newItem]);
   };
@@ -49,14 +50,18 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
     }
   };
 
-  const updateItem = (id: string, field: keyof SaleItem, value: string | number) => {
+  const updateItem = (id: string, field: keyof SaleItem, value: string) => {
     setItems(items.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ));
   };
 
   const calculateTotal = () => {
-    return items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+    return items.reduce((sum, item) => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const price = parseFloat(item.price) || 0;
+      return sum + (quantity * price);
+    }, 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,9 +109,9 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
       const saleItems = items.map(item => ({
         sale_id: saleData.id,
         item_name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        subtotal: item.quantity * item.price
+        quantity: parseInt(item.quantity) || 0,
+        price: parseFloat(item.price) || 0,
+        subtotal: (parseInt(item.quantity) || 0) * (parseFloat(item.price) || 0)
       }));
 
       const { error: itemsError } = await supabase
@@ -129,7 +134,7 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
         paymentType: '',
         dueDate: ''
       });
-      setItems([{ id: '1', name: '', quantity: 1, price: 0 }]);
+      setItems([{ id: '1', name: '', quantity: '', price: '' }]);
 
       // Call the callback to refresh dashboard metrics
       if (onSaleRecorded) {
@@ -250,7 +255,8 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                     type="number"
                     min="1"
                     value={item.quantity}
-                    onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                    onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                    placeholder="Enter quantity"
                     required
                   />
                 </div>
@@ -264,7 +270,8 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                       step="0.01"
                       min="0"
                       value={item.price}
-                      onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => updateItem(item.id, 'price', e.target.value)}
+                      placeholder="Enter price"
                       required
                     />
                   </div>
@@ -283,7 +290,7 @@ const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
                 
                 <div className="md:col-span-4 text-right">
                   <span className="text-sm text-gray-600">
-                    Subtotal: ₦{(item.quantity * item.price).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                    Subtotal: ₦{((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>

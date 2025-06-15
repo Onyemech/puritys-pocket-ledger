@@ -26,14 +26,14 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   
-  // Mock inventory data
+  // Mock inventory data with Naira pricing
   const [inventory, setInventory] = useState<InventoryItem[]>([
     {
       id: '1',
       name: 'Premium Coffee Beans',
       description: 'High-quality arabica coffee beans',
       quantity: 45,
-      price: 15.99,
+      price: 5500,
       lowStockThreshold: 20
     },
     {
@@ -41,7 +41,7 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
       name: 'Organic Tea Bags',
       description: 'Assorted organic tea collection',
       quantity: 8,
-      price: 12.50,
+      price: 4200,
       lowStockThreshold: 15
     },
     {
@@ -49,7 +49,7 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
       name: 'Ceramic Mugs',
       description: 'Handcrafted ceramic mugs',
       quantity: 25,
-      price: 18.00,
+      price: 6500,
       lowStockThreshold: 10
     }
   ]);
@@ -57,18 +57,18 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    quantity: 0,
-    price: 0,
-    lowStockThreshold: 5
+    quantity: '',
+    price: '',
+    lowStockThreshold: ''
   });
 
   const resetForm = () => {
     setFormData({
       name: '',
       description: '',
-      quantity: 0,
-      price: 0,
-      lowStockThreshold: 5
+      quantity: '',
+      price: '',
+      lowStockThreshold: ''
     });
     setShowAddForm(false);
     setEditingItem(null);
@@ -81,7 +81,14 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
       // Update existing item
       setInventory(inventory.map(item => 
         item.id === editingItem.id 
-          ? { ...item, ...formData }
+          ? { 
+              ...item, 
+              name: formData.name,
+              description: formData.description,
+              quantity: parseInt(formData.quantity) || 0,
+              price: parseFloat(formData.price) || 0,
+              lowStockThreshold: parseInt(formData.lowStockThreshold) || 5
+            }
           : item
       ));
       toast({
@@ -92,7 +99,11 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
       // Add new item
       const newItem: InventoryItem = {
         id: Date.now().toString(),
-        ...formData
+        name: formData.name,
+        description: formData.description,
+        quantity: parseInt(formData.quantity) || 0,
+        price: parseFloat(formData.price) || 0,
+        lowStockThreshold: parseInt(formData.lowStockThreshold) || 5
       };
       setInventory([...inventory, newItem]);
       toast({
@@ -108,9 +119,9 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
     setFormData({
       name: item.name,
       description: item.description,
-      quantity: item.quantity,
-      price: item.price,
-      lowStockThreshold: item.lowStockThreshold
+      quantity: item.quantity.toString(),
+      price: item.price.toString(),
+      lowStockThreshold: item.lowStockThreshold.toString()
     });
     setEditingItem(item);
     setShowAddForm(true);
@@ -169,14 +180,15 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="price">Price ($)</Label>
+                  <Label htmlFor="price">Price (₦)</Label>
                   <Input
                     id="price"
                     type="number"
                     step="0.01"
                     min="0"
                     value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    placeholder="Enter price"
                     required
                   />
                 </div>
@@ -200,7 +212,8 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
                     type="number"
                     min="0"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                    placeholder="Enter quantity"
                     required
                   />
                 </div>
@@ -212,7 +225,8 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
                     type="number"
                     min="1"
                     value={formData.lowStockThreshold}
-                    onChange={(e) => setFormData({...formData, lowStockThreshold: parseInt(e.target.value) || 5})}
+                    onChange={(e) => setFormData({...formData, lowStockThreshold: e.target.value})}
+                    placeholder="Enter threshold"
                     required
                   />
                 </div>
@@ -255,7 +269,7 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
               
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Price:</span>
-                <span className="font-semibold">${item.price.toFixed(2)}</span>
+                <span className="font-semibold">₦{item.price.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
               </div>
               
               <div className="flex justify-between items-center">

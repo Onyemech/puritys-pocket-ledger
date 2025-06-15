@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +60,24 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
     price: '',
     lowStockThreshold: ''
   });
+
+  // === NEW: Show toast for low stock when page opens ===
+  useEffect(() => {
+    const lowStockItems = inventory.filter(
+      (item) => item.quantity <= item.lowStockThreshold
+    );
+    if (lowStockItems.length > 0) {
+      toast({
+        title: "Low Stock Alert!",
+        description: `The following items are low on stock: ${lowStockItems
+          .map((item) => item.name)
+          .join(', ')}`,
+        variant: "destructive"
+      });
+    }
+    // Only show on first mount (page open), don't repeat on updates.
+    // eslint-disable-next-line
+  }, []); 
 
   const resetForm = () => {
     setFormData({

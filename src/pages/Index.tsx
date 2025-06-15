@@ -11,10 +11,12 @@ import CustomerAccounts from '@/components/CustomerAccounts';
 import ExpenseForm from '@/components/ExpenseForm';
 import Reports from '@/components/Reports';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
+import { useRecentActivity } from '@/hooks/useRecentActivity';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { todaySales, creditOutstanding, lowStockItems, loading, error, refetch } = useDashboardMetrics();
+  const { activities, loading: activitiesLoading } = useRecentActivity();
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -159,40 +161,45 @@ const Index = () => {
                 <CardTitle>Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <div>
-                        <p className="font-medium">Sale to John Smith</p>
-                        <p className="text-sm text-gray-600">2 items • ₦125.50</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">Cash</Badge>
+                {activitiesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Loading recent activity...</span>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <div>
-                        <p className="font-medium">Inventory Updated</p>
-                        <p className="text-sm text-gray-600">Added 50 units of Product A</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">Stock</Badge>
+                ) : activities.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No recent activity found
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                      <div>
-                        <p className="font-medium">Payment Received</p>
-                        <p className="text-sm text-gray-600">Mary Johnson • ₦200.00</p>
+                ) : (
+                  <div className="space-y-3">
+                    {activities.map((activity) => (
+                      <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            activity.type === 'sale' ? 'bg-green-500' :
+                            activity.type === 'payment' ? 'bg-amber-500' :
+                            activity.type === 'inventory' ? 'bg-blue-500' :
+                            'bg-purple-500'
+                          }`}></div>
+                          <div>
+                            <p className="font-medium">{activity.title}</p>
+                            <p className="text-sm text-gray-600">{activity.description}</p>
+                          </div>
+                        </div>
+                        <Badge 
+                          variant={activity.badgeVariant}
+                          className={
+                            activity.badge === 'Credit' && activity.badgeVariant === 'default' 
+                              ? 'bg-amber-100 text-amber-800' 
+                              : ''
+                          }
+                        >
+                          {activity.badge}
+                        </Badge>
                       </div>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-800">Credit</Badge>
+                    ))}
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

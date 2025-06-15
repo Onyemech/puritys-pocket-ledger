@@ -1,4 +1,11 @@
 
+export interface SaleItem {
+  item_name: string;
+  quantity: number;
+  price: number;
+  subtotal: number;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -6,6 +13,7 @@ export interface Customer {
   lastPayment: string;
   phone?: string;
   email?: string;
+  purchasedItems?: SaleItem[];
 }
 
 export interface Payment {

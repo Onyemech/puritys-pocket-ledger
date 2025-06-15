@@ -4,7 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 export const fetchCreditSales = async () => {
   const { data: creditSales, error } = await supabase
     .from('sales')
-    .select('id, customer_name, total_amount, date, payment_type')
+    .select(`
+      id, 
+      customer_name, 
+      total_amount, 
+      date, 
+      payment_type,
+      sale_items (
+        item_name,
+        quantity,
+        price,
+        subtotal
+      )
+    `)
     .eq('payment_type', 'credit')
     .eq('paid', false)
     .not('customer_name', 'is', null);

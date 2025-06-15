@@ -64,7 +64,6 @@ const Index = () => {
     return (
       <ExpenseForm 
         onBack={() => setCurrentView('dashboard')}
-        onExpenseRecorded={handleRefreshData}
       />
     );
   }

@@ -1,23 +1,19 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-
-export interface Customer {
-  id: string;
-  name: string;
-  totalCredit: number;
-  lastPayment: string;
-  phone?: string;
-  email?: string;
-}
-
-export interface Payment {
-  id: string;
-  customerId: string;
-  amount: number;
-  date: string;
-  method: string;
-}
+import type { Customer } from '@/types/customer';
+import { 
+  fetchCreditSales, 
+  fetchPaymentsForSales, 
+  fetchCustomerSales,
+  insertPayments,
+  updateSalesAsPaid
+} from '@/services/customerService';
+import { 
+  createPaymentMap, 
+  processCustomerData, 
+  calculatePaymentDistribution 
+} from '@/utils/customerUtils';
 
 export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
   const { toast } = useToast();
@@ -29,69 +25,19 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
     try {
       setLoading(true);
       
-      // Get all credit sales that are unpaid
-      const { data: creditSales, error } = await supabase
-        .from('sales')
-        .select('id, customer_name, total_amount, date, payment_type')
-        .eq('payment_type', 'credit')
-        .eq('paid', false)
-        .not('customer_name', 'is', null);
-
-      if (error) throw error;
-
+      const creditSales = await fetchCreditSales();
       console.log('Fetched credit sales:', creditSales);
 
       // Get all payments for these sales
       const saleIds = creditSales?.map(sale => sale.id) || [];
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('sale_id, amount')
-        .in('sale_id', saleIds);
-
-      if (paymentsError) throw paymentsError;
-
+      const payments = await fetchPaymentsForSales(saleIds);
       console.log('Fetched payments:', payments);
 
       // Create a map of payments by sale_id
-      const paymentMap = new Map<string, number>();
-      payments?.forEach(payment => {
-        const existing = paymentMap.get(payment.sale_id) || 0;
-        paymentMap.set(payment.sale_id, existing + Number(payment.amount));
-      });
+      const paymentMap = createPaymentMap(payments || []);
 
       // Group by customer and calculate remaining balances
-      const customerMap = new Map<string, Customer>();
-      
-      creditSales?.forEach(sale => {
-        const customerName = sale.customer_name!;
-        const saleAmount = Number(sale.total_amount);
-        const paidAmount = paymentMap.get(sale.id) || 0;
-        const remainingAmount = saleAmount - paidAmount;
-
-        console.log(`Sale ${sale.id}: amount=${saleAmount}, paid=${paidAmount}, remaining=${remainingAmount}`);
-
-        // Only include if there's still a remaining balance
-        if (remainingAmount > 0) {
-          const existing = customerMap.get(customerName);
-          
-          if (existing) {
-            existing.totalCredit += remainingAmount;
-            // Keep the most recent date
-            if (sale.date > existing.lastPayment) {
-              existing.lastPayment = sale.date;
-            }
-          } else {
-            customerMap.set(customerName, {
-              id: customerName, // Using name as ID for simplicity
-              name: customerName,
-              totalCredit: remainingAmount,
-              lastPayment: sale.date,
-            });
-          }
-        }
-      });
-
-      const updatedCustomers = Array.from(customerMap.values());
+      const updatedCustomers = processCustomerData(creditSales || [], paymentMap);
       console.log('Updated customers:', updatedCustomers);
       setCustomers(updatedCustomers);
     } catch (error) {
@@ -110,16 +56,7 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
     try {
       console.log('Recording payment:', { customer: customer.name, amount });
       
-      // Get customer sales to update (oldest first)
-      const { data: customerSales, error: salesError } = await supabase
-        .from('sales')
-        .select('*')
-        .eq('customer_name', customer.name)
-        .eq('payment_type', 'credit')
-        .eq('paid', false)
-        .order('date', { ascending: true });
-
-      if (salesError) throw salesError;
+      const customerSales = await fetchCustomerSales(customer.name);
 
       if (!customerSales || customerSales.length === 0) {
         throw new Error('No unpaid sales found for this customer');
@@ -127,51 +64,20 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
       console.log('Customer sales found:', customerSales);
 
-      let remainingPayment = amount;
-      const paymentsToRecord = [];
-      const salesToUpdate = [];
-
-      for (const sale of customerSales) {
-        if (remainingPayment <= 0) break;
-        
-        const saleAmount = Number(sale.total_amount);
-        const paymentForThisSale = Math.min(remainingPayment, saleAmount);
-        
-        console.log(`Processing sale ${sale.id}: amount=${saleAmount}, payment=${paymentForThisSale}`);
-        
-        // Record payment for this sale
-        paymentsToRecord.push({
-          sale_id: sale.id,
-          amount: paymentForThisSale,
-          payment_date: new Date().toISOString().split('T')[0]
-        });
-
-        // If this payment fully covers the sale, mark it as paid
-        if (paymentForThisSale >= saleAmount) {
-          salesToUpdate.push(sale.id);
-        }
-
-        remainingPayment -= paymentForThisSale;
-      }
+      const { paymentsToRecord, salesToUpdate } = calculatePaymentDistribution(
+        customerSales, 
+        amount
+      );
 
       console.log('Payments to record:', paymentsToRecord);
       console.log('Sales to mark as paid:', salesToUpdate);
 
       // Insert all payments
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert(paymentsToRecord);
-
-      if (paymentError) throw paymentError;
+      await insertPayments(paymentsToRecord);
 
       // Update sales as paid
       if (salesToUpdate.length > 0) {
-        const { error: updateError } = await supabase
-          .from('sales')
-          .update({ paid: true })
-          .in('id', salesToUpdate);
-
-        if (updateError) throw updateError;
+        await updateSalesAsPaid(salesToUpdate);
       }
 
       console.log('Payment recorded successfully:', {
@@ -225,3 +131,5 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
     refetchCustomers: fetchCustomers
   };
 };
+
+export type { Customer };

@@ -6,62 +6,31 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import InventoryItemForm from "./inventory/InventoryItemForm";
+import InventoryItemCard from "./inventory/InventoryItemCard";
+import { useInventory } from "@/hooks/useInventory";
+import type { InventoryItem } from "./inventory/types";
 
 interface InventoryListProps {
   onBack: () => void;
 }
 
-interface InventoryItem {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-  price: number;
-  lowStockThreshold: number;
-}
-
 const InventoryList = ({ onBack }: InventoryListProps) => {
   const { toast } = useToast();
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  
-  // Mock inventory data with Naira pricing
-  const [inventory, setInventory] = useState<InventoryItem[]>([
-    {
-      id: '1',
-      name: 'Premium Coffee Beans',
-      description: 'High-quality arabica coffee beans',
-      quantity: 45,
-      price: 5500,
-      lowStockThreshold: 20
-    },
-    {
-      id: '2',
-      name: 'Organic Tea Bags',
-      description: 'Assorted organic tea collection',
-      quantity: 8,
-      price: 4200,
-      lowStockThreshold: 15
-    },
-    {
-      id: '3',
-      name: 'Ceramic Mugs',
-      description: 'Handcrafted ceramic mugs',
-      quantity: 25,
-      price: 6500,
-      lowStockThreshold: 10
-    }
-  ]);
+  const {
+    inventory, setInventory,
+    formData, setFormData,
+    editingItem,
+    showAddForm,
+    setShowAddForm,
+    resetForm,
+    handleEdit,
+    handleDelete,
+    handleChange,
+    addOrUpdateItem,
+  } = useInventory();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    quantity: '',
-    price: '',
-    lowStockThreshold: ''
-  });
-
-  // === NEW: Show toast for low stock when page opens ===
+  // === Low stock toast on page mount ===
   useEffect(() => {
     const lowStockItems = inventory.filter(
       (item) => item.quantity <= item.lowStockThreshold
@@ -75,78 +44,33 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
         variant: "destructive"
       });
     }
-    // Only show on first mount (page open), don't repeat on updates.
     // eslint-disable-next-line
   }, []); 
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      quantity: '',
-      price: '',
-      lowStockThreshold: ''
-    });
-    setShowAddForm(false);
-    setEditingItem(null);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    const updatedItem = addOrUpdateItem();
     if (editingItem) {
-      // Update existing item
-      setInventory(inventory.map(item => 
-        item.id === editingItem.id 
-          ? { 
-              ...item, 
-              name: formData.name,
-              description: formData.description,
-              quantity: parseInt(formData.quantity) || 0,
-              price: parseFloat(formData.price) || 0,
-              lowStockThreshold: parseInt(formData.lowStockThreshold) || 5
-            }
-          : item
-      ));
       toast({
         title: "Item Updated! ✅",
         description: `${formData.name} has been updated successfully.`,
       });
     } else {
-      // Add new item
-      const newItem: InventoryItem = {
-        id: Date.now().toString(),
-        name: formData.name,
-        description: formData.description,
-        quantity: parseInt(formData.quantity) || 0,
-        price: parseFloat(formData.price) || 0,
-        lowStockThreshold: parseInt(formData.lowStockThreshold) || 5
-      };
-      setInventory([...inventory, newItem]);
       toast({
         title: "Item Added! 🎉",
         description: `${formData.name} has been added to inventory.`,
       });
     }
-    
     resetForm();
   };
 
-  const handleEdit = (item: InventoryItem) => {
-    setFormData({
-      name: item.name,
-      description: item.description,
-      quantity: item.quantity.toString(),
-      price: item.price.toString(),
-      lowStockThreshold: item.lowStockThreshold.toString()
-    });
-    setEditingItem(item);
-    setShowAddForm(true);
+  const onEdit = (item: InventoryItem) => {
+    handleEdit(item);
   };
 
-  const handleDelete = (id: string) => {
+  const onDelete = (id: string) => {
     const item = inventory.find(i => i.id === id);
-    setInventory(inventory.filter(item => item.id !== id));
+    handleDelete(id);
     toast({
       title: "Item Deleted",
       description: `${item?.name} has been removed from inventory.`,
@@ -166,7 +90,6 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
           </Button>
           <h2 className="text-2xl font-bold">Inventory Management</h2>
         </div>
-        
         {!showAddForm && (
           <Button onClick={() => setShowAddForm(true)} className="bg-green-600 hover:bg-green-700">
             <Plus className="h-4 w-4 mr-2" />
@@ -174,160 +97,26 @@ const InventoryList = ({ onBack }: InventoryListProps) => {
           </Button>
         )}
       </div>
-
       {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {editingItem ? 'Edit Item' : 'Add New Item'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Item Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Enter item name"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="price">Price (₦)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    placeholder="Enter price"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Enter item description"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="0"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                    placeholder="Enter quantity"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="lowStockThreshold">Low Stock Alert Threshold</Label>
-                  <Input
-                    id="lowStockThreshold"
-                    type="number"
-                    min="1"
-                    value={formData.lowStockThreshold}
-                    onChange={(e) => setFormData({...formData, lowStockThreshold: e.target.value})}
-                    placeholder="Enter threshold"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <Button type="button" variant="outline" onClick={resetForm} className="flex-1">
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                  {editingItem ? 'Update Item' : 'Add Item'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <InventoryItemForm
+          formData={formData}
+          editingItem={editingItem}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          onCancel={resetForm}
+        />
       )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {inventory.map((item) => (
-          <Card key={item.id} className={`${isLowStock(item) ? 'border-red-200 bg-red-50' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{item.name}</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                </div>
-                {isLowStock(item) && (
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Quantity:</span>
-                <Badge variant={isLowStock(item) ? "destructive" : "secondary"}>
-                  {item.quantity} units
-                </Badge>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Price:</span>
-                <span className="font-semibold">₦{item.price.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Low Stock Alert:</span>
-                <span className="text-sm">{item.lowStockThreshold} units</span>
-              </div>
-              
-              {isLowStock(item) && (
-                <div className="bg-red-100 border border-red-200 rounded-lg p-2">
-                  <p className="text-sm text-red-700 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    Low stock alert!
-                  </p>
-                </div>
-              )}
-              
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(item)}
-                  className="flex-1"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(item.id)}
-                  className="flex-1 text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <InventoryItemCard
+            key={item.id}
+            item={item}
+            isLowStock={isLowStock(item)}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
         ))}
       </div>
-
       {inventory.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">

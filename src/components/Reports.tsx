@@ -16,36 +16,36 @@ const Reports = ({ onBack }: ReportsProps) => {
   // Mock data for reports
   const mockData = {
     daily: {
-      sales: 1250.00,
-      expenses: 320.00,
-      profit: 930.00,
+      sales: 1250000.00,
+      expenses: 320000.00,
+      profit: 930000.00,
       transactions: 15,
       topItems: [
-        { name: 'Premium Coffee', quantity: 12, revenue: 191.88 },
-        { name: 'Organic Tea', quantity: 8, revenue: 100.00 },
-        { name: 'Ceramic Mugs', quantity: 3, revenue: 54.00 }
+        { name: 'Premium Coffee', quantity: 12, revenue: 191880.00 },
+        { name: 'Organic Tea', quantity: 8, revenue: 100000.00 },
+        { name: 'Ceramic Mugs', quantity: 3, revenue: 54000.00 }
       ]
     },
     weekly: {
-      sales: 8750.00,
-      expenses: 2240.00,
-      profit: 6510.00,
+      sales: 8750000.00,
+      expenses: 2240000.00,
+      profit: 6510000.00,
       transactions: 98,
       topItems: [
-        { name: 'Premium Coffee', quantity: 84, revenue: 1343.16 },
-        { name: 'Organic Tea', quantity: 56, revenue: 700.00 },
-        { name: 'Ceramic Mugs', quantity: 21, revenue: 378.00 }
+        { name: 'Premium Coffee', quantity: 84, revenue: 1343160.00 },
+        { name: 'Organic Tea', quantity: 56, revenue: 700000.00 },
+        { name: 'Ceramic Mugs', quantity: 21, revenue: 378000.00 }
       ]
     },
     monthly: {
-      sales: 32500.00,
-      expenses: 8960.00,
-      profit: 23540.00,
+      sales: 32500000.00,
+      expenses: 8960000.00,
+      profit: 23540000.00,
       transactions: 387,
       topItems: [
-        { name: 'Premium Coffee', quantity: 312, revenue: 4986.88 },
-        { name: 'Organic Tea', quantity: 208, revenue: 2600.00 },
-        { name: 'Ceramic Mugs', quantity: 78, revenue: 1404.00 }
+        { name: 'Premium Coffee', quantity: 312, revenue: 4986880.00 },
+        { name: 'Organic Tea', quantity: 208, revenue: 2600000.00 },
+        { name: 'Ceramic Mugs', quantity: 78, revenue: 1404000.00 }
       ]
     }
   };
@@ -57,14 +57,14 @@ const Reports = ({ onBack }: ReportsProps) => {
     console.log(`Exporting ${reportType} report...`);
     // Mock export functionality
     const csvContent = `Report Type,${reportType.charAt(0).toUpperCase() + reportType.slice(1)}
-Sales,$${currentData.sales.toFixed(2)}
-Expenses,$${currentData.expenses.toFixed(2)}
-Profit,$${currentData.profit.toFixed(2)}
+Sales,₦${currentData.sales.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+Expenses,₦${currentData.expenses.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+Profit,₦${currentData.profit.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
 Transactions,${currentData.transactions}
 Profit Margin,${profitMargin.toFixed(2)}%
 
 Top Items:
-${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenue.toFixed(2)}`).join('\n')}`;
+${currentData.topItems.map(item => `${item.name},${item.quantity},₦${item.revenue.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`).join('\n')}`;
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -116,7 +116,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-800">
-              ${currentData.sales.toFixed(2)}
+              ₦{currentData.sales.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-green-600 mt-1">
               {currentData.transactions} transactions
@@ -133,7 +133,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-800">
-              ${currentData.expenses.toFixed(2)}
+              ₦{currentData.expenses.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-red-600 mt-1">
               Operating costs
@@ -150,7 +150,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-800">
-              ${currentData.profit.toFixed(2)}
+              ₦{currentData.profit.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-blue-600 mt-1">
               {profitMargin.toFixed(1)}% margin
@@ -167,7 +167,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-800">
-              ${(currentData.sales / currentData.transactions).toFixed(2)}
+              ₦{(currentData.sales / currentData.transactions).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-purple-600 mt-1">
               Per transaction
@@ -189,7 +189,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
                 <span className="font-medium text-green-800">Revenue</span>
               </div>
               <span className="text-2xl font-bold text-green-700">
-                ${currentData.sales.toFixed(2)}
+                ₦{currentData.sales.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
               </span>
             </div>
             
@@ -199,7 +199,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
                 <span className="font-medium text-red-800">Expenses</span>
               </div>
               <span className="text-2xl font-bold text-red-700">
-                ${currentData.expenses.toFixed(2)}
+                ₦{currentData.expenses.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
               </span>
             </div>
             
@@ -209,7 +209,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
                 <span className="font-medium text-blue-800">Net Profit</span>
               </div>
               <span className="text-2xl font-bold text-blue-700">
-                ${currentData.profit.toFixed(2)}
+                ₦{currentData.profit.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
               </span>
             </div>
           </div>
@@ -235,7 +235,7 @@ ${currentData.topItems.map(item => `${item.name},${item.quantity},$${item.revenu
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-green-600">${item.revenue.toFixed(2)}</p>
+                  <p className="font-bold text-green-600">₦{item.revenue.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</p>
                   <p className="text-sm text-gray-600">revenue</p>
                 </div>
               </div>

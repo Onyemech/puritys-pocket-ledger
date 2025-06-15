@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,18 +78,7 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
   const recordPayment = async (customer: Customer, amount: number) => {
     try {
-      // Record the payment in the payments table
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          sale_id: null, // We'll need to link this properly in a real implementation
-          amount: amount,
-          payment_date: new Date().toISOString().split('T')[0]
-        });
-
-      if (paymentError) throw paymentError;
-
-      // Update sales to mark them as paid (proportionally)
+      // Get customer sales to update (oldest first)
       const { data: customerSales, error: salesError } = await supabase
         .from('sales')
         .select('*')
@@ -99,34 +89,49 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
 
       if (salesError) throw salesError;
 
+      if (!customerSales || customerSales.length === 0) {
+        throw new Error('No unpaid sales found for this customer');
+      }
+
       let remainingPayment = amount;
-      for (const sale of customerSales || []) {
+      const paymentsToRecord = [];
+
+      for (const sale of customerSales) {
         if (remainingPayment <= 0) break;
         
         const saleAmount = Number(sale.total_amount);
-        if (remainingPayment >= saleAmount) {
-          // Fully pay this sale
+        const paymentForThisSale = Math.min(remainingPayment, saleAmount);
+        
+        // Record payment for this sale
+        paymentsToRecord.push({
+          sale_id: sale.id,
+          amount: paymentForThisSale,
+          payment_date: new Date().toISOString().split('T')[0]
+        });
+
+        // If this payment fully covers the sale, mark it as paid
+        if (paymentForThisSale >= saleAmount) {
           await supabase
             .from('sales')
             .update({ paid: true })
             .eq('id', sale.id);
-          remainingPayment -= saleAmount;
-        } else {
-          // Partially pay this sale - for simplicity, we'll mark it as paid if payment covers most of it
-          if (remainingPayment / saleAmount > 0.8) {
-            await supabase
-              .from('sales')
-              .update({ paid: true })
-              .eq('id', sale.id);
-          }
-          remainingPayment = 0;
         }
+
+        remainingPayment -= paymentForThisSale;
       }
+
+      // Insert all payments
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert(paymentsToRecord);
+
+      if (paymentError) throw paymentError;
 
       console.log('Payment recorded successfully:', {
         customerId: customer.id,
         amount,
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        paymentsRecorded: paymentsToRecord.length
       });
 
       toast({
@@ -147,7 +152,7 @@ export const useCustomerAccounts = (onPaymentRecorded?: () => void) => {
       console.error('Error recording payment:', error);
       toast({
         title: "Error",
-        description: "Failed to record payment. Please try again.",
+        description: `Failed to record payment: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       return false;

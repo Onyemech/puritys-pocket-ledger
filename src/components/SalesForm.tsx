@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SalesFormProps {
   onBack: () => void;
+  onSaleRecorded?: () => void;
 }
 
 interface SaleItem {
@@ -19,7 +20,7 @@ interface SaleItem {
   price: number;
 }
 
-const SalesForm = ({ onBack }: SalesFormProps) => {
+const SalesForm = ({ onBack, onSaleRecorded }: SalesFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -58,7 +59,7 @@ const SalesForm = ({ onBack }: SalesFormProps) => {
     return items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
@@ -81,21 +82,68 @@ const SalesForm = ({ onBack }: SalesFormProps) => {
     }
 
     const total = calculateTotal();
-    console.log('Recording sale:', { ...formData, items, total });
     
-    toast({
-      title: "Sale Recorded! 🎉",
-      description: `Sale of ₦${total.toLocaleString('en-NG', { minimumFractionDigits: 2 })} has been recorded successfully.`,
-    });
-    
-    // Reset form
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      customerName: '',
-      paymentType: '',
-      dueDate: ''
-    });
-    setItems([{ id: '1', name: '', quantity: 1, price: 0 }]);
+    try {
+      // Insert sale into database
+      const { data: saleData, error: saleError } = await supabase
+        .from('sales')
+        .insert({
+          date: formData.date,
+          customer_name: formData.customerName || null,
+          payment_type: formData.paymentType,
+          total_amount: total,
+          due_date: formData.paymentType === 'credit' ? formData.dueDate || null : null,
+          paid: formData.paymentType === 'cash'
+        })
+        .select()
+        .single();
+
+      if (saleError) throw saleError;
+
+      // Insert sale items
+      const saleItems = items.map(item => ({
+        sale_id: saleData.id,
+        item_name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.quantity * item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .insert(saleItems);
+
+      if (itemsError) throw itemsError;
+
+      console.log('Sale recorded successfully:', { ...formData, items, total });
+      
+      toast({
+        title: "Sale Recorded! 🎉",
+        description: `Sale of ₦${total.toLocaleString('en-NG', { minimumFractionDigits: 2 })} has been recorded successfully.`,
+      });
+      
+      // Reset form
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        customerName: '',
+        paymentType: '',
+        dueDate: ''
+      });
+      setItems([{ id: '1', name: '', quantity: 1, price: 0 }]);
+
+      // Call the callback to refresh dashboard metrics
+      if (onSaleRecorded) {
+        onSaleRecorded();
+      }
+
+    } catch (error) {
+      console.error('Error recording sale:', error);
+      toast({
+        title: "Error",
+        description: "Failed to record sale. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

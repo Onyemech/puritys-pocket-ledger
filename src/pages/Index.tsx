@@ -14,20 +14,28 @@ import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { todaySales, creditOutstanding, lowStockItems, loading, error } = useDashboardMetrics();
+  const { todaySales, creditOutstanding, lowStockItems, loading, error, refetch } = useDashboardMetrics();
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    // Refetch metrics when returning to dashboard
+    if (tab === 'dashboard') {
+      refetch();
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'sales':
-        return <SalesForm onBack={() => setActiveTab('dashboard')} />;
+        return <SalesForm onBack={() => handleTabChange('dashboard')} onSaleRecorded={refetch} />;
       case 'inventory':
-        return <InventoryList onBack={() => setActiveTab('dashboard')} />;
+        return <InventoryList onBack={() => handleTabChange('dashboard')} />;
       case 'customers':
-        return <CustomerAccounts onBack={() => setActiveTab('dashboard')} />;
+        return <CustomerAccounts onBack={() => handleTabChange('dashboard')} onPaymentRecorded={refetch} />;
       case 'expenses':
-        return <ExpenseForm onBack={() => setActiveTab('dashboard')} />;
+        return <ExpenseForm onBack={() => handleTabChange('dashboard')} />;
       case 'reports':
-        return <Reports onBack={() => setActiveTab('dashboard')} />;
+        return <Reports onBack={() => handleTabChange('dashboard')} />;
       default:
         return (
           <div className="space-y-6">
@@ -108,7 +116,7 @@ const Index = () => {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <Button 
-                    onClick={() => setActiveTab('sales')}
+                    onClick={() => handleTabChange('sales')}
                     className="h-20 flex flex-col items-center gap-2 bg-blue-600 hover:bg-blue-700"
                   >
                     <ShoppingCart className="h-6 w-6" />
@@ -116,7 +124,7 @@ const Index = () => {
                   </Button>
                   
                   <Button 
-                    onClick={() => setActiveTab('inventory')}
+                    onClick={() => handleTabChange('inventory')}
                     variant="outline"
                     className="h-20 flex flex-col items-center gap-2 border-green-200 hover:bg-green-50"
                   >
@@ -125,7 +133,7 @@ const Index = () => {
                   </Button>
                   
                   <Button 
-                    onClick={() => setActiveTab('customers')}
+                    onClick={() => handleTabChange('customers')}
                     variant="outline"
                     className="h-20 flex flex-col items-center gap-2 border-purple-200 hover:bg-purple-50"
                   >
@@ -134,7 +142,7 @@ const Index = () => {
                   </Button>
                   
                   <Button 
-                    onClick={() => setActiveTab('reports')}
+                    onClick={() => handleTabChange('reports')}
                     variant="outline"
                     className="h-20 flex flex-col items-center gap-2 border-orange-200 hover:bg-orange-50"
                   >

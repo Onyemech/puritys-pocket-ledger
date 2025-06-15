@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CustomerAccountsProps {
   onBack: () => void;
+  onPaymentRecorded?: () => void;
 }
 
 interface Customer {
@@ -29,7 +30,7 @@ interface Payment {
   method: string;
 }
 
-const CustomerAccounts = ({ onBack }: CustomerAccountsProps) => {
+const CustomerAccounts = ({ onBack, onPaymentRecorded }: CustomerAccountsProps) => {
   const { toast } = useToast();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -90,11 +91,16 @@ const CustomerAccounts = ({ onBack }: CustomerAccountsProps) => {
 
     toast({
       title: "Payment Recorded! 💰",
-      description: `Payment of $${amount.toFixed(2)} recorded for ${selectedCustomer.name}.`,
+      description: `Payment of ₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} recorded for ${selectedCustomer.name}.`,
     });
 
     setPaymentAmount('');
     setSelectedCustomer(null);
+
+    // Call the callback to refresh dashboard metrics
+    if (onPaymentRecorded) {
+      onPaymentRecorded();
+    }
   };
 
   const getCustomerPayments = (customerId: string) => {
@@ -130,7 +136,7 @@ const CustomerAccounts = ({ onBack }: CustomerAccountsProps) => {
               <p className="text-sm text-blue-600">Total Customers</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-700">${getTotalOutstanding().toFixed(2)}</p>
+              <p className="text-2xl font-bold text-blue-700">₦{getTotalOutstanding().toLocaleString('en-NG', { minimumFractionDigits: 2 })}</p>
               <p className="text-sm text-blue-600">Outstanding Credit</p>
             </div>
             <div className="text-center">
@@ -155,12 +161,12 @@ const CustomerAccounts = ({ onBack }: CustomerAccountsProps) => {
                 <div>
                   <Label>Outstanding Balance</Label>
                   <div className="text-2xl font-bold text-red-600">
-                    ${selectedCustomer.totalCredit.toFixed(2)}
+                    ₦{selectedCustomer.totalCredit.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
                 
                 <div>
-                  <Label htmlFor="paymentAmount">Payment Amount ($)</Label>
+                  <Label htmlFor="paymentAmount">Payment Amount (₦)</Label>
                   <Input
                     id="paymentAmount"
                     type="number"
@@ -206,7 +212,7 @@ const CustomerAccounts = ({ onBack }: CustomerAccountsProps) => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Outstanding:</span>
                 <Badge variant={customer.totalCredit > 0 ? "destructive" : "secondary"}>
-                  ${customer.totalCredit.toFixed(2)}
+                  ₦{customer.totalCredit.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                 </Badge>
               </div>
               
@@ -249,7 +255,7 @@ const CustomerAccounts = ({ onBack }: CustomerAccountsProps) => {
                   {getCustomerPayments(customer.id).slice(0, 2).map((payment) => (
                     <div key={payment.id} className="flex justify-between text-xs text-gray-600">
                       <span>{new Date(payment.date).toLocaleDateString()}</span>
-                      <span className="text-green-600">${payment.amount.toFixed(2)}</span>
+                      <span className="text-green-600">₦{payment.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                     </div>
                   ))}
                   {getCustomerPayments(customer.id).length === 0 && (

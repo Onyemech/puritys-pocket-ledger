@@ -1,8 +1,6 @@
-
 import { Heart } from 'lucide-react';
 const Navbar = () => {
-  return (
-    <nav className="bg-white shadow-sm border-b">
+  return <nav className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Pink logo pill with subtle pink pulse 3D shadow */}
@@ -14,7 +12,7 @@ const Navbar = () => {
               <h1 className="text-lg font-bold text-pink-700 drop-shadow-pink">
                 Hello Miss Purity ✨
               </h1>
-              <p className="text-sm text-rose-400">This website was specially designed by someone who Luvs you 💕</p>
+              <p className="text-sm text-rose-400">This website was specially made for you Mummy m 💕</p>
             </div>
           </div>
           <div className="text-right">
@@ -37,7 +35,6 @@ const Navbar = () => {
           }
         `}
       </style>
-    </nav>
-  );
+    </nav>;
 };
 export default Navbar;

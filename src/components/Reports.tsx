@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,6 +57,35 @@ ${reportData.topItems.map(item => `${item.name},${item.quantity},₦${item.reven
     const a = document.createElement('a');
     a.href = url;
     a.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const generateInvoiceReport = () => {
+    console.log(`Generating invoice report for ${reportType} period...`);
+    
+    const invoiceContent = `INVOICE REPORT - ${reportType.toUpperCase()}
+Generated: ${new Date().toLocaleDateString()}
+
+SUMMARY:
+Sales Revenue: ₦${reportData.sales.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+Total Expenses: ₦${reportData.expenses.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+Net Profit: ₦${reportData.profit.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+Profit Margin: ${profitMargin.toFixed(2)}%
+Total Transactions: ${reportData.transactions}
+
+TOP SELLING ITEMS:
+${reportData.topItems.map((item, index) => `${index + 1}. ${item.name} - ${item.quantity} units - ₦${item.revenue.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`).join('\n')}
+
+PERFORMANCE METRICS:
+Average Transaction Value: ₦${reportData.transactions > 0 ? (reportData.sales / reportData.transactions).toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '0.00'}
+`;
+
+    const blob = new Blob([invoiceContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-report-${reportType}-${new Date().toISOString().split('T')[0]}.txt`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -289,7 +317,7 @@ ${reportData.topItems.map(item => `${item.name},${item.quantity},₦${item.reven
                   View Trends Analysis
                 </Button>
                 
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={generateInvoiceReport}>
                   <DollarSign className="h-4 w-4 mr-2" />
                   Generate Invoice Report
                 </Button>

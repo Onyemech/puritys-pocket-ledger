@@ -95,7 +95,7 @@ const Index = () => {
         </div>
         <DashboardStats todaySales={todaySales} creditOutstanding={creditOutstanding} lowStockItems={lowStockItems} loading={metricsLoading} />
         {/* QuickActions replaced with custom actions below */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('sales')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">

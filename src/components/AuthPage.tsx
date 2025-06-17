@@ -1,5 +1,5 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle } from "lucide-react";
 
 const AuthPage = () => {
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, user } = useAuth();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,30 +18,46 @@ const AuthPage = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Debug user state
+  useEffect(() => {
+    console.log("AuthPage: User state:", user);
+    if (user) {
+      console.log("AuthPage: Redirecting to /");
+      navigate("/");
+    }
+  }, [user, navigate]);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
     setLoading(true);
-    
+
     if (isLogin) {
       const { error } = await signIn(email, password);
       if (error) {
+        console.log("AuthPage: Sign-in error:", error.message);
         setError(error.message);
+        setLoading(false);
+      } else {
+        console.log("AuthPage: Sign-in successful, expecting redirect via useEffect");
+        // Navigation will be handled by useEffect when user state updates
       }
     } else {
       const { error } = await signUp(email, password, fullName);
       if (error) {
+        console.log("AuthPage: Sign-up error:", error.message);
         setError(error.message);
       } else {
+        console.log("AuthPage: Sign-up successful");
         setSuccess("Account created successfully! You can now login.");
         setIsLogin(true);
         setEmail("");
         setPassword("");
         setFullName("");
       }
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -74,7 +91,7 @@ const AuthPage = () => {
                   autoComplete="name"
                   placeholder="Miss Purity"
                   value={fullName}
-                  onChange={e => setFullName(e.target.value)}
+                  onChange={(e) => setFullName(e.target.value)}
                   className="bg-rose-50/70 focus:bg-white"
                   required
                 />
@@ -88,7 +105,7 @@ const AuthPage = () => {
                 autoComplete="email"
                 placeholder="purity@email.com"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 className="bg-rose-50/70 focus:bg-white"
                 required
               />
@@ -101,7 +118,7 @@ const AuthPage = () => {
                 placeholder="********"
                 autoComplete={isLogin ? "current-password" : "new-password"}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 className="bg-rose-50/70 focus:bg-white"
                 required
                 minLength={6}
@@ -110,21 +127,21 @@ const AuthPage = () => {
                 <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
               )}
             </div>
-            
+
             {error && (
               <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-2 rounded">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>
             )}
-            
+
             {success && (
               <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded">
                 <CheckCircle className="h-4 w-4" />
                 {success}
               </div>
             )}
-            
+
             <Button
               type="submit"
               className="w-full bg-pink-500 hover:bg-pink-600 transition focus:ring-pink-400 font-semibold"
@@ -132,7 +149,7 @@ const AuthPage = () => {
             >
               {loading ? "Please wait…" : isLogin ? "Login" : "Create Account"}
             </Button>
-            
+
             <div className="text-center mt-2">
               <button
                 type="button"

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 const AuthPage = () => {
   const { signUp, signIn } = useAuth();
@@ -14,18 +14,31 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
+    
     if (isLogin) {
       const { error } = await signIn(email, password);
-      setError(error?.message || null);
+      if (error) {
+        setError(error.message);
+      }
     } else {
       const { error } = await signUp(email, password, fullName);
-      setError(error?.message || null);
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess("Account created successfully! You can now login.");
+        setIsLogin(true);
+        setEmail("");
+        setPassword("");
+        setFullName("");
+      }
     }
     setLoading(false);
   };
@@ -45,7 +58,9 @@ const AuthPage = () => {
             <CardTitle className="text-2xl font-extrabold text-pink-700 mb-2 drop-shadow-pink">
               Purity's Inventory
             </CardTitle>
-            <span className="text-rose-400 font-medium text-sm mb-1">One login for everything 💕</span>
+            <span className="text-rose-400 font-medium text-sm mb-1">
+              {isLogin ? "Welcome back! 💕" : "Join us today! 💕"}
+            </span>
           </div>
         </CardHeader>
         <CardContent>
@@ -89,26 +104,44 @@ const AuthPage = () => {
                 onChange={e => setPassword(e.target.value)}
                 className="bg-rose-50/70 focus:bg-white"
                 required
+                minLength={6}
               />
+              {!isLogin && (
+                <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+              )}
             </div>
+            
             {error && (
               <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-2 rounded">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>
             )}
+            
+            {success && (
+              <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded">
+                <CheckCircle className="h-4 w-4" />
+                {success}
+              </div>
+            )}
+            
             <Button
               type="submit"
               className="w-full bg-pink-500 hover:bg-pink-600 transition focus:ring-pink-400 font-semibold"
               disabled={loading}
             >
-              {loading ? "Please wait…" : isLogin ? "Login" : "Sign Up"}
+              {loading ? "Please wait…" : isLogin ? "Login" : "Create Account"}
             </Button>
+            
             <div className="text-center mt-2">
               <button
                 type="button"
                 className="text-sm text-pink-600 hover:underline focus:outline-none"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError(null);
+                  setSuccess(null);
+                }}
               >
                 {isLogin
                   ? "Don't have an account? Sign up"

@@ -25,14 +25,11 @@ const AppContent = () => {
     );
   }
 
-  if (!user) {
-    return <AuthPage />;
-  }
-
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

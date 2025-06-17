@@ -18,12 +18,12 @@ const AuthPage = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Debug user state
+  // Redirect if user is authenticated
   useEffect(() => {
-    console.log("AuthPage: User state:", user);
+    console.log("AuthPage: Checking user state:", user);
     if (user) {
-      console.log("AuthPage: Redirecting to /");
-      navigate("/");
+      console.log("AuthPage: User is authenticated, navigating to /");
+      navigate("/", { replace: true });
     }
   }, [user, navigate]);
 
@@ -34,19 +34,22 @@ const AuthPage = () => {
     setLoading(true);
 
     if (isLogin) {
+      console.log("AuthPage: Attempting sign-in with:", email);
       const { error } = await signIn(email, password);
       if (error) {
-        console.log("AuthPage: Sign-in error:", error.message);
+        console.log("AuthPage: Sign-in failed:", error.message);
         setError(error.message);
         setLoading(false);
       } else {
-        console.log("AuthPage: Sign-in successful, expecting redirect via useEffect");
-        // Navigation will be handled by useEffect when user state updates
+        console.log("AuthPage: Sign-in successful, expecting useEffect redirect");
+        // Fallback navigation in case useEffect doesn't trigger
+        navigate("/", { replace: true });
       }
     } else {
+      console.log("AuthPage: Attempting sign-up with:", email, fullName);
       const { error } = await signUp(email, password, fullName);
       if (error) {
-        console.log("AuthPage: Sign-up error:", error.message);
+        console.log("AuthPage: Sign-up failed:", error.message);
         setError(error.message);
       } else {
         console.log("AuthPage: Sign-up successful");
@@ -84,7 +87,7 @@ const AuthPage = () => {
           <form onSubmit={handleAuth} className="space-y-5">
             {!isLogin && (
               <div>
-                <Label htmlFor="name" className="text-pink-600">Full Name</Label>
+                <Label htmlFor="name" className="年初-pink-600">Full Name</Label>
                 <Input
                   id="name"
                   type="text"

@@ -25,19 +25,17 @@ const AppContent = () => {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={user ? <Index /> : <Navigate to="/auth" replace />}
-        />
-        <Route
-          path="/auth"
-          element={user ? <Navigate to="/" replace /> : <AuthPage />}
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route
+        path="/"
+        element={user ? <Index /> : <Navigate to="/auth" replace />}
+      />
+      <Route
+        path="/auth"
+        element={user ? <Navigate to="/" replace /> : <AuthPage />}
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
@@ -45,9 +43,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
+        <BrowserRouter>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

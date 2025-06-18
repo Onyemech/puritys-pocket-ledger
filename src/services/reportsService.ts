@@ -35,36 +35,53 @@ export const fetchReportData = async (reportType: 'daily' | 'weekly' | 'monthly'
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = now.toISOString().split('T')[0];
 
-    // Fetch sales data - RLS will filter by user automatically
-    const { data: salesData } = await supabase
+    // Fetch sales data - Only for current authenticated user
+    const { data: salesData, error: salesError } = await supabase
       .from('sales')
-      .select('total_amount, created_at')
+      .select('total_amount, created_at, user_id')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
       .gte('date', startDateStr)
       .lte('date', endDateStr);
+
+    if (salesError) {
+      console.error('Sales query error:', salesError);
+      throw salesError;
+    }
 
     const totalSales = salesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
     const totalTransactions = salesData?.length || 0;
 
-    // Fetch expenses data - RLS will filter by user automatically
-    const { data: expensesData } = await supabase
+    // Fetch expenses data - Only for current authenticated user
+    const { data: expensesData, error: expensesError } = await supabase
       .from('expenses')
-      .select('amount')
+      .select('amount, user_id')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
       .gte('date', startDateStr)
       .lte('date', endDateStr);
 
+    if (expensesError) {
+      console.error('Expenses query error:', expensesError);
+      throw expensesError;
+    }
+
     const totalExpenses = expensesData?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
 
-    // Fetch top selling items - RLS will filter by user automatically through sales relationship
-    const { data: topItemsData } = await supabase
+    // Fetch top selling items - Only for current authenticated user through sales relationship
+    const { data: topItemsData, error: itemsError } = await supabase
       .from('sale_items')
       .select(`
         item_name,
         quantity,
         subtotal,
-        sales!inner(date)
+        sales!inner(date, user_id)
       `)
+      .eq('sales.user_id', (await supabase.auth.getUser()).data.user?.id)
       .gte('sales.date', startDateStr)
       .lte('sales.date', endDateStr);
+
+    if (itemsError) {
+      console.error('Top items query error:', itemsError);
+    }
 
     // Group by item name and calculate totals
     const itemMap: { [key: string]: { quantity: number; revenue: number } } = {};

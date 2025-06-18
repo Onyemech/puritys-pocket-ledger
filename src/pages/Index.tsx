@@ -133,9 +133,9 @@ const Index = () => {
           loading={metricsLoading} 
         />
 
-        {/* Quick Actions */}
+        {/* Quick Actions with 3D effects */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('sales')}>
+          <Card className="card-3d card-interactive ripple bg-white" onClick={() => setCurrentView('sales')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Record Sale
@@ -147,7 +147,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('customers')}>
+          <Card className="card-3d card-interactive ripple bg-white" onClick={() => setCurrentView('customers')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Customer Accounts
@@ -159,7 +159,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('inventory')}>
+          <Card className="card-3d card-interactive ripple bg-white" onClick={() => setCurrentView('inventory')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Inventory
@@ -171,7 +171,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('expenses')}>
+          <Card className="card-3d card-interactive ripple bg-white" onClick={() => setCurrentView('expenses')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Record Expense
@@ -183,7 +183,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('reports')}>
+          <Card className="card-3d card-interactive ripple bg-white" onClick={() => setCurrentView('reports')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Reports
@@ -195,7 +195,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('history')}>
+          <Card className="card-3d card-interactive ripple bg-white" onClick={() => setCurrentView('history')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 History
@@ -208,29 +208,19 @@ const Index = () => {
           </Card>
         </div>
 
-        <RecentActivityCard activities={activities} loading={activitiesLoading} />
+        <div className="card-3d bg-white">
+          <RecentActivityCard activities={activities} loading={activitiesLoading} />
+        </div>
       </div>
 
-      {/* Notification button */}
+      {/* Enhanced floating notification button */}
       <div className="fixed bottom-6 right-6 z-50">
-        <button className="bg-pink-400 animate-pulse-pink rounded-full p-3 shadow-2xl text-white" title="Get push notifications (coming soon!)">
+        <button className="bg-pink-500 animate-pulse-pink floating-btn rounded-full p-3 shadow-2xl text-white hover:bg-pink-600 transition-colors duration-300" title="Get push notifications (coming soon!)">
           <svg className="inline w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V5a1 1 0 10-2 0v.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 01-6 0" />
           </svg>
         </button>
       </div>
-
-      <style>
-        {`
-          .animate-pulse-pink {
-            animation: pulsePink 2s cubic-bezier(0.4,0,0.6,1) infinite;
-          }
-          @keyframes pulsePink {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4); }
-            50% { box-shadow: 0 0 36px 12px rgba(244, 114, 182, 0.18); }
-          }
-        `}
-      </style>
     </div>
   );
 };

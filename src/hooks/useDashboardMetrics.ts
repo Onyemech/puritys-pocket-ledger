@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   fetchCreditSales, 
   fetchPaymentsForSales 
@@ -20,6 +21,7 @@ interface DashboardMetrics {
 }
 
 export const useDashboardMetrics = (): DashboardMetrics => {
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     todaySales: 0,
     creditOutstanding: 0,
@@ -30,10 +32,21 @@ export const useDashboardMetrics = (): DashboardMetrics => {
   });
 
   const fetchMetrics = async () => {
+    if (!user) {
+      setMetrics(prev => ({
+        ...prev,
+        loading: false,
+        todaySales: 0,
+        creditOutstanding: 0,
+        lowStockItems: 0
+      }));
+      return;
+    }
+
     try {
       setMetrics(prev => ({ ...prev, loading: true, error: null }));
 
-      // Get today's sales
+      // Get today's sales for current user
       const today = new Date().toISOString().split('T')[0];
       const { data: todaySalesData, error: salesError } = await supabase
         .from('sales')
@@ -44,7 +57,7 @@ export const useDashboardMetrics = (): DashboardMetrics => {
 
       const todaySales = todaySalesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
 
-      // Get credit outstanding using the same logic as customer accounts
+      // Get credit outstanding for current user
       const creditSales = await fetchCreditSales();
       const saleIds = creditSales?.map(sale => sale.id) || [];
       const payments = await fetchPaymentsForSales(saleIds);
@@ -52,7 +65,7 @@ export const useDashboardMetrics = (): DashboardMetrics => {
       const customers = processCustomerData(creditSales || [], paymentMap);
       const creditOutstanding = customers.reduce((sum, customer) => sum + customer.totalCredit, 0);
 
-      // Get low stock items count
+      // Get low stock items count for current user
       const { data: inventoryData, error: inventoryError } = await supabase
         .from('inventory')
         .select('quantity, low_stock_threshold');
@@ -84,8 +97,10 @@ export const useDashboardMetrics = (): DashboardMetrics => {
   };
 
   useEffect(() => {
-    fetchMetrics();
-  }, []);
+    if (user) {
+      fetchMetrics();
+    }
+  }, [user]);
 
   return { ...metrics, refetch: fetchMetrics };
 };

@@ -1,7 +1,9 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, TrendingUp, DollarSign, Users, Package, AlertTriangle, LogOut, User, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SalesForm from "@/components/SalesForm";
 import CustomerAccounts from "@/components/CustomerAccounts";
@@ -15,13 +17,10 @@ import Navbar from "@/components/Navbar";
 import DashboardStats from "@/components/dashboard/DashboardStats";
 import QuickActions from "@/components/dashboard/QuickActions";
 import RecentActivityCard from "@/components/dashboard/RecentActivityCard";
-import HistoryPage from "./History"; // <-- New import
+import HistoryPage from "./History";
 
 const Index = () => {
-  const {
-    user,
-    signOut
-  } = useAuth();
+  const { user, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<
     "dashboard" | "sales" | "customers" | "reports" | "expenses" | "inventory" | "history"
   >("dashboard");
@@ -33,11 +32,13 @@ const Index = () => {
     loading: metricsLoading,
     refetch: refetchMetrics
   } = useDashboardMetrics();
+  
   const {
     activities,
     loading: activitiesLoading,
     refetch: refetchActivities
   } = useRecentActivity();
+  
   const {
     recent,
     monthly,
@@ -51,10 +52,13 @@ const Index = () => {
     refetchActivities();
     refetchHistory();
   };
+
   const handleSignOut = async () => {
+    console.log('Logout button clicked');
     await signOut();
   };
 
+  // Navigation handlers
   if (currentView === "sales") {
     return <SalesForm onBack={() => setCurrentView("dashboard")} onSaleRecorded={handleRefreshData} />;
   }
@@ -84,16 +88,52 @@ const Index = () => {
 
   return (
     <div className="animated-pink-bg">
-      <Navbar />
+      {/* Header with user info and logout */}
+      <div className="bg-white/90 backdrop-blur border-b border-pink-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-extrabold text-pink-700">Purity's Inventory</h1>
+              <p className="text-sm text-pink-500">Welcome back, {user?.user_metadata?.full_name || user?.email}!</p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="border-pink-300 text-pink-700 hover:bg-pink-50">
+                  <User className="h-4 w-4 mr-2" />
+                  Account
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled>
+                  <span className="text-sm text-gray-500">{user?.email}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-extrabold text-pink-700 mb-2">Welcome, Miss Nzube!</h2>
+          <h2 className="text-3xl font-extrabold text-pink-700 mb-2">Dashboard</h2>
           <p className="text-pink-500">
-            Track your sales, manage inventory, and stay happy 🙂
+            Track your sales, manage inventory, and stay organized 💖
           </p>
         </div>
-        <DashboardStats todaySales={todaySales} creditOutstanding={creditOutstanding} lowStockItems={lowStockItems} loading={metricsLoading} />
-        {/* QuickActions replaced with custom actions below */}
+
+        <DashboardStats 
+          todaySales={todaySales} 
+          creditOutstanding={creditOutstanding} 
+          lowStockItems={lowStockItems} 
+          loading={metricsLoading} 
+        />
+
+        {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('sales')}>
             <CardHeader>
@@ -106,6 +146,7 @@ const Index = () => {
               <p className="text-gray-600">Add new sales transactions and manage payments</p>
             </CardContent>
           </Card>
+
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('customers')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -117,6 +158,7 @@ const Index = () => {
               <p className="text-gray-600">Manage credit sales and customer payments</p>
             </CardContent>
           </Card>
+
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('inventory')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -128,6 +170,7 @@ const Index = () => {
               <p className="text-gray-600">Track stock levels and manage products</p>
             </CardContent>
           </Card>
+
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('expenses')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -139,6 +182,7 @@ const Index = () => {
               <p className="text-gray-600">Track business expenses and costs</p>
             </CardContent>
           </Card>
+
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('reports')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -150,7 +194,7 @@ const Index = () => {
               <p className="text-gray-600">View sales reports and business analytics</p>
             </CardContent>
           </Card>
-          {/* NEW HISTORY CARD */}
+
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('history')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -163,9 +207,11 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
+
         <RecentActivityCard activities={activities} loading={activitiesLoading} />
-        {/* HistoryCard removed from here */}
       </div>
+
+      {/* Notification button */}
       <div className="fixed bottom-6 right-6 z-50">
         <button className="bg-pink-400 animate-pulse-pink rounded-full p-3 shadow-2xl text-white" title="Get push notifications (coming soon!)">
           <svg className="inline w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -173,6 +219,7 @@ const Index = () => {
           </svg>
         </button>
       </div>
+
       <style>
         {`
           .animate-pulse-pink {
@@ -187,4 +234,5 @@ const Index = () => {
     </div>
   );
 };
+
 export default Index;

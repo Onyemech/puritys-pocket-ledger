@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface Transaction {
   id: string;
@@ -27,21 +28,30 @@ const getStartDate = (days: number) => {
 };
 
 export function useTransactionHistory(): HistoryData {
+  const { user } = useAuth();
   const [recent, setRecent] = useState<Transaction[]>([]);
   const [monthly, setMonthly] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTransactions = async () => {
+    if (!user) {
+      setRecent([]);
+      setMonthly([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    
     try {
       const now = new Date();
       const today = now.toISOString().split("T")[0];
       const yesterday = getStartDate(1);
       const monthAgo = getStartDate(30);
 
-      // SALES
+      // SALES - RLS will automatically filter by user
       const { data: salesRecent, error: salesRecentErr } = await supabase
         .from("sales")
         .select("id, date, customer_name, total_amount, sale_items(item_name, quantity), payment_type")
@@ -56,7 +66,7 @@ export function useTransactionHistory(): HistoryData {
         .lte("date", today)
         .order("date", { ascending: false });
 
-      // EXPENSES
+      // EXPENSES - RLS will automatically filter by user
       const { data: expensesRecent, error: expensesRecentErr } = await supabase
         .from("expenses")
         .select("id, date, amount, description")
@@ -71,7 +81,7 @@ export function useTransactionHistory(): HistoryData {
         .lte("date", today)
         .order("date", { ascending: false });
 
-      // PAYMENTS
+      // PAYMENTS - RLS will automatically filter by user through sales relationship
       const { data: paymentsRecent, error: paymentsRecentErr } = await supabase
         .from("payments")
         .select("id, payment_date, amount, sales(customer_name)")
@@ -104,7 +114,7 @@ export function useTransactionHistory(): HistoryData {
         );
       }
 
-      // Format SALES
+      // Format data (same as before)
       const mapSales = (data: any[]) =>
         (data || []).map(sale => ({
           id: sale.id,
@@ -120,7 +130,6 @@ export function useTransactionHistory(): HistoryData {
           description: undefined,
         }));
 
-      // Format EXPENSES
       const mapExpenses = (data: any[]) =>
         (data || []).map(exp => ({
           id: exp.id,
@@ -130,7 +139,6 @@ export function useTransactionHistory(): HistoryData {
           description: exp.description,
         }));
 
-      // Format PAYMENTS
       const mapPayments = (data: any[]) =>
         (data || []).map(pay => ({
           id: pay.id,
@@ -162,9 +170,10 @@ export function useTransactionHistory(): HistoryData {
   };
 
   useEffect(() => {
-    fetchTransactions();
-    // eslint-disable-next-line
-  }, []);
+    if (user) {
+      fetchTransactions();
+    }
+  }, [user]);
 
   return {
     recent,

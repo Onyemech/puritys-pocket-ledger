@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,7 @@ const AuthPage = () => {
   useEffect(() => {
     console.log("AuthPage: Checking user state:", user);
     if (user) {
-      console.log("AuthPage: User is authenticated, navigating to /");
+      console.log("AuthPage: User is authenticated, navigating to dashboard");
       navigate("/", { replace: true });
     }
   }, [user, navigate]);
@@ -33,32 +34,35 @@ const AuthPage = () => {
     setSuccess(null);
     setLoading(true);
 
-    if (isLogin) {
-      console.log("AuthPage: Attempting sign-in with:", email);
-      const { error } = await signIn(email, password);
-      if (error) {
-        console.log("AuthPage: Sign-in failed:", error.message);
-        setError(error.message);
-        setLoading(false);
+    try {
+      if (isLogin) {
+        console.log("AuthPage: Attempting sign-in with:", email);
+        const { error } = await signIn(email, password);
+        if (error) {
+          console.log("AuthPage: Sign-in failed:", error.message);
+          setError(error.message);
+        } else {
+          console.log("AuthPage: Sign-in successful");
+          // Navigation will be handled by useEffect when user state updates
+        }
       } else {
-        console.log("AuthPage: Sign-in successful, expecting useEffect redirect");
-        // Fallback navigation in case useEffect doesn't trigger
-        navigate("/", { replace: true });
+        console.log("AuthPage: Attempting sign-up with:", email, fullName);
+        const { error } = await signUp(email, password, fullName);
+        if (error) {
+          console.log("AuthPage: Sign-up failed:", error.message);
+          setError(error.message);
+        } else {
+          console.log("AuthPage: Sign-up successful");
+          setSuccess("Account created successfully! You can now login.");
+          setIsLogin(true);
+          setEmail("");
+          setPassword("");
+          setFullName("");
+        }
       }
-    } else {
-      console.log("AuthPage: Attempting sign-up with:", email, fullName);
-      const { error } = await signUp(email, password, fullName);
-      if (error) {
-        console.log("AuthPage: Sign-up failed:", error.message);
-        setError(error.message);
-      } else {
-        console.log("AuthPage: Sign-up successful");
-        setSuccess("Account created successfully! You can now login.");
-        setIsLogin(true);
-        setEmail("");
-        setPassword("");
-        setFullName("");
-      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
+    } finally {
       setLoading(false);
     }
   };
@@ -69,6 +73,7 @@ const AuthPage = () => {
         <div className="w-3/4 h-1/3 rounded-full blur-3xl bg-rose-100/60 absolute -top-24 -left-20" />
         <div className="w-72 h-96 rounded-full blur-2xl bg-pink-400/40 absolute bottom-0 right-8" />
       </div>
+      
       <Card className="z-10 shadow-2xl border-pink-200 bg-white/95 max-w-md w-full relative">
         <CardHeader>
           <div className="flex flex-col items-center mb-2">
@@ -83,11 +88,12 @@ const AuthPage = () => {
             </span>
           </div>
         </CardHeader>
+        
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-5">
             {!isLogin && (
               <div>
-                <Label htmlFor="name" className="年初-pink-600">Full Name</Label>
+                <Label htmlFor="name" className="text-pink-600">Full Name</Label>
                 <Input
                   id="name"
                   type="text"
@@ -100,6 +106,7 @@ const AuthPage = () => {
                 />
               </div>
             )}
+            
             <div>
               <Label htmlFor="email" className="text-pink-600">Email</Label>
               <Input
@@ -113,6 +120,7 @@ const AuthPage = () => {
                 required
               />
             </div>
+            
             <div>
               <Label htmlFor="password" className="text-pink-600">Password</Label>
               <Input
@@ -171,6 +179,7 @@ const AuthPage = () => {
           </form>
         </CardContent>
       </Card>
+      
       <style>
         {`
           .drop-shadow-pink {

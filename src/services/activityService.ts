@@ -16,7 +16,7 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
   
   try {
     console.log('Fetching recent sales with items...');
-    // Fetch recent sales with their items (last 5)
+    // Fetch recent sales with their items (last 5) - RLS will handle user filtering
     const { data: salesData, error: salesError } = await supabase
       .from('sales')
       .select(`
@@ -36,7 +36,6 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
       console.log('Sales data with items:', salesData);
       if (salesData) {
         salesData.forEach(sale => {
-          // Get the first item name or show multiple items count
           const itemNames = sale.sale_items?.map(item => item.item_name) || [];
           const itemDescription = itemNames.length > 0 
             ? itemNames.length === 1 
@@ -58,7 +57,7 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
     }
 
     console.log('Fetching recent payments...');
-    // Fetch recent payments (last 3)
+    // Fetch recent payments (last 3) - RLS will handle user filtering
     const { data: paymentsData, error: paymentsError } = await supabase
       .from('payments')
       .select(`
@@ -91,7 +90,7 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
     }
 
     console.log('Fetching recent inventory updates...');
-    // Fetch recent inventory updates (last 2)
+    // Fetch recent inventory updates (last 2) - RLS will handle user filtering
     const { data: inventoryData, error: inventoryError } = await supabase
       .from('inventory')
       .select('id, name, quantity, updated_at')
@@ -118,7 +117,7 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
     }
 
     console.log('Fetching recent expenses...');
-    // Fetch recent expenses (last 2)
+    // Fetch recent expenses (last 2) - RLS will handle user filtering
     const { data: expensesData, error: expensesError } = await supabase
       .from('expenses')
       .select('id, description, amount, created_at')
@@ -148,7 +147,7 @@ export const fetchRecentActivity = async (): Promise<RecentActivity[]> => {
     activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
     console.log('Final activities:', activities.slice(0, 6));
-    return activities.slice(0, 6); // Return top 6 most recent activities
+    return activities.slice(0, 6);
   } catch (error) {
     console.error('Error fetching recent activity:', error);
     return [];

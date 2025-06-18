@@ -10,6 +10,7 @@ export const fetchCreditSales = async () => {
       total_amount, 
       date, 
       payment_type,
+      user_id,
       sale_items (
         item_name,
         quantity,

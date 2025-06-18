@@ -21,12 +21,12 @@ const ExpenseSummaryCard = ({ filteredExpenses }: ExpenseSummaryCardProps) => {
             <p className="text-sm text-red-600">Total Expenses</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-red-700">${getTotalExpenses().toFixed(2)}</p>
+            <p className="text-2xl font-bold text-red-700">₦{getTotalExpenses().toFixed(2)}</p>
             <p className="text-sm text-red-600">Total Amount</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-red-700">
-              ${filteredExpenses.length > 0 ? (getTotalExpenses() / filteredExpenses.length).toFixed(2) : '0.00'}
+              ₦{filteredExpenses.length > 0 ? (getTotalExpenses() / filteredExpenses.length).toFixed(2) : '0.00'}
             </p>
             <p className="text-sm text-red-600">Average</p>
           </div>
@@ -37,4 +37,3 @@ const ExpenseSummaryCard = ({ filteredExpenses }: ExpenseSummaryCardProps) => {
 };
 
 export default ExpenseSummaryCard;
-

@@ -55,7 +55,7 @@ const ExpenseListItem = ({ expense }: { expense: Expense }) => {
       </div>
       <div className="text-right">
         <p className="text-lg font-bold text-red-600">
-          -${expense.amount.toFixed(2)}
+          -₦{expense.amount.toFixed(2)}
         </p>
       </div>
     </div>

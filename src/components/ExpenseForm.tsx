@@ -1,8 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import ExpenseSummaryCard from "./expense/ExpenseSummaryCard";
 import AddExpenseForm from "./expense/AddExpenseForm";
 import ExpenseHistoryCard from "./expense/ExpenseHistoryCard";
@@ -13,6 +15,7 @@ interface Expense {
   category: string;
   amount: number;
   description: string;
+  user_id?: string;
 }
 
 interface ExpenseFormProps {
@@ -21,47 +24,18 @@ interface ExpenseFormProps {
 
 const ExpenseForm = ({ onBack }: ExpenseFormProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     category: "",
-    amount: 0, // For first render, amount is 0, but will be handled as '' in input
+    amount: 0,
     description: "",
   });
-
-  // Mock expenses data
-  const [expenses, setExpenses] = useState<Expense[]>([
-    {
-      id: "1",
-      date: "2024-01-15",
-      category: "inventory",
-      amount: 850.0,
-      description: "Coffee beans wholesale purchase",
-    },
-    {
-      id: "2",
-      date: "2024-01-14",
-      category: "utilities",
-      amount: 125.5,
-      description: "Electricity bill",
-    },
-    {
-      id: "3",
-      date: "2024-01-12",
-      category: "supplies",
-      amount: 75.0,
-      description: "Packaging materials",
-    },
-    {
-      id: "4",
-      date: "2024-01-10",
-      category: "marketing",
-      amount: 200.0,
-      description: "Social media advertising",
-    },
-  ]);
 
   const categories = [
     { value: "inventory", label: "Inventory" },
@@ -73,6 +47,30 @@ const ExpenseForm = ({ onBack }: ExpenseFormProps) => {
     { value: "other", label: "Other" },
   ];
 
+  const fetchExpenses = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching expenses:', error);
+    } else {
+      setExpenses(data || []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchExpenses();
+    }
+  }, [user]);
+
   const resetForm = () => {
     setFormData({
       date: new Date().toISOString().split("T")[0],
@@ -83,23 +81,58 @@ const ExpenseForm = ({ onBack }: ExpenseFormProps) => {
     setShowAddForm(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newExpense: Expense = {
-      id: Date.now().toString(),
-      ...formData,
-    };
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add expenses.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    setExpenses([newExpense, ...expenses]);
+    const { error } = await supabase
+      .from('expenses')
+      .insert({
+        ...formData,
+        user_id: user.id
+      });
 
-    toast({
-      title: "Expense Recorded! 📝",
-      description: `Expense of $${formData.amount.toFixed(2)} has been recorded.`,
-    });
-
-    resetForm();
+    if (error) {
+      console.error('Error adding expense:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add expense. Please try again.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Expense Recorded! 📝",
+        description: `Expense of ₦${formData.amount.toFixed(2)} has been recorded.`,
+      });
+      fetchExpenses();
+      resetForm();
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={onBack} size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h2 className="text-2xl font-bold">Expense Tracking</h2>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading expenses...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

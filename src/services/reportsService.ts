@@ -35,7 +35,7 @@ export const fetchReportData = async (reportType: 'daily' | 'weekly' | 'monthly'
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = now.toISOString().split('T')[0];
 
-    // Fetch sales data
+    // Fetch sales data - RLS will filter by user automatically
     const { data: salesData } = await supabase
       .from('sales')
       .select('total_amount, created_at')
@@ -45,7 +45,7 @@ export const fetchReportData = async (reportType: 'daily' | 'weekly' | 'monthly'
     const totalSales = salesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
     const totalTransactions = salesData?.length || 0;
 
-    // Fetch expenses data
+    // Fetch expenses data - RLS will filter by user automatically
     const { data: expensesData } = await supabase
       .from('expenses')
       .select('amount')
@@ -54,7 +54,7 @@ export const fetchReportData = async (reportType: 'daily' | 'weekly' | 'monthly'
 
     const totalExpenses = expensesData?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
 
-    // Fetch top selling items
+    // Fetch top selling items - RLS will filter by user automatically through sales relationship
     const { data: topItemsData } = await supabase
       .from('sale_items')
       .select(`
